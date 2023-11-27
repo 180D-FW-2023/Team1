@@ -31,12 +31,6 @@ def movenet(input_image):
     keypoints_with_scores = outputs['output_0'].numpy()
     return keypoints_with_scores
 
-def image_resize(input_image):
-    # Resize and pad the image to keep the aspect ratio and fit the expected size.
-    input_image = tf.expand_dims(input_image, axis=0)
-    input_image = tf.image.resize_with_pad(input_image, input_size, input_size)
-    return input_image
-
 
 def point_overlay(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
