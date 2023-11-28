@@ -1,4 +1,5 @@
 from BerryIMU.python_BerryIMU_gyro_accel_compass_filters.berryIMU import *
+from BerryIMU.python_BerryIMU_gyro_accel_compass_filters.IMU import *
 import time
 def main():
     imu = MirrorMeIMU()
