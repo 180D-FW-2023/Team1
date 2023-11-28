@@ -57,7 +57,6 @@ gyroZangle = 0.0
 CFangleX = 0.0
 CFangleY = 0.0
 
-a = datetime.datetime.now()
 
 class MirrorMeIMU():
 
@@ -71,12 +70,15 @@ class MirrorMeIMU():
         IMU.initIMU()       #Initialise the accelerometer, gyroscope and compass
         self.buffer = []
         self.thread = None
-        self.event = threading.Event
+        self.event = threading.Event()
         self.event.clear()
+        self.time = datetime.datetime.now()
     
     def start(self):
         self.event.set()
+        self.time = datetime.datetime.now()
         self.thread = threading.Thread(target=self.__run)
+        self.thread.start()
 
     def stop(self):
         self.event.clear()
@@ -104,8 +106,8 @@ class MirrorMeIMU():
             MAGz -= (magZmin + magZmax) /2
 
             ##Calculate loop Period(LP). How long between Gyro Reads
-            b = datetime.datetime.now() - a
-            a = datetime.datetime.now()
+            b = datetime.datetime.now() - self.time
+            self.time = datetime.datetime.now()
             LP = b.microseconds/(1000000*1.0)
 
             #Convert Gyro raw to degrees per second

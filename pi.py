@@ -5,14 +5,14 @@ def main():
     imu = MirrorMeIMU()
     imu.start()
     time.sleep(2)
-    imu.get_values()
+    print(imu.get_values())
     time.sleep(2)
-    imu.get_values()
+    print(imu.get_values())
     imu.stop()
     time.sleep(3)
-    imu.get_values()
+    print(imu.get_values())
     time.sleep(1)
-    imu.get_values()
+    print(imu.get_values())
 
 if __name__ == "__main__":
     main()
