@@ -32,6 +32,23 @@ def movenet(input_image):
     return keypoints_with_scores
 
 
+
+# font 
+font = cv2.FONT_HERSHEY_SIMPLEX 
+  
+# org 
+org = (50, 50) 
+  
+# fontScale 
+fontScale = 1
+   
+# Blue color in BGR 
+color = (255, 0, 0) 
+  
+# Line thickness of 2 px 
+thickness = 2
+   
+
 def point_overlay(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     image = tf.expand_dims(image, axis=0)
@@ -40,8 +57,9 @@ def point_overlay(image):
 
     image = np.array(image[0]).astype(np.uint8)
 
-    for y, x, score in keypoints_with_scores[0][0]:
+    for i, (y, x, score) in enumerate(keypoints_with_scores[0][0]):
         #print(x, y)
         if score > 0.4:
             image = cv2.circle(image, (int(x * image.shape[1]), int(y * image.shape[0])), 20, (0, 0, 255), -1)
+            image = cv2.putText(image, str(i), (int(x * image.shape[1]), int(y * image.shape[0])), font, fontScale, color, thickness, cv2.LINE_AA) 
     return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
