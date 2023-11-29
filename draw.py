@@ -10,13 +10,12 @@ cap = cv2.VideoCapture(0)
 FPS = 30
 TEST_PATH = []
 for i in range(0, 50):
-    TEST_PATH.append((100, 100+i*10))
-for i in range(0, 50):
-    TEST_PATH.append((100+i*10, TEST_PATH[-1][1]))
-CIRCLE_RADIUS = 10
-CIRCLE_COLOR = (255, 0, 0)
+    TEST_PATH.append((50, 100+i*10))
+for i in range(0, 100):
+    TEST_PATH.append((50+i*10, TEST_PATH[-1][1]))
 DRAW_BUFFER = []
-MAX_BUFFER_SIZE = 10
+CIRCLE_BASE_RADIUS = 25
+MAX_BUFFER_SIZE = 40
 
 
 test_path_ptr = 0
@@ -29,6 +28,7 @@ while(True):
 
     # Get frame
     ret, frame = cap.read()
+    frame = cv2.flip(frame, 1)
 
     # Draw path
     # If buffer isn't full and there is still a path to draw
@@ -45,12 +45,11 @@ while(True):
         DRAW_BUFFER.pop(0)
         if len(DRAW_BUFFER) == 0:
             test_path_ptr = 0
+    for (x, y), i in zip(DRAW_BUFFER, range(len(DRAW_BUFFER), -1, -1)):
+        cv2.circle(frame, center=(x,y), radius=CIRCLE_BASE_RADIUS-i//2, color=(255, i*5, i*5), thickness=-1)
 
-    for x, y in DRAW_BUFFER:
-        cv2.circle(frame, center=(x,y), radius=CIRCLE_RADIUS, color=CIRCLE_COLOR, thickness=-1)
-
+    # Display frame
     cv2.imshow('RGB', frame)
-
 
     # Check for exit key
     if cv2.waitKey(1) & 0xFF == ord('q'):
