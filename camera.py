@@ -1,5 +1,5 @@
 import cv2
-from model_utils import point_overlay
+from model_utils import generate_points, overlay_points
 
 counter = 0
 # Create a VideoCapture object to capture video from the default camera
@@ -14,8 +14,10 @@ while True:
     if not ret:
         break
 
+    # Generate pose estimation points
+    points = generate_points(frame)
     # Display the frame in a window
-    frame = point_overlay(frame)
+    frame = overlay_points(frame, points)
 
     cv2.imshow('frame', frame)
 
