@@ -9,7 +9,12 @@ import threading
 
 # Function to convert OpenCV image format to Streamlit format
 def opencv_to_streamlit(frame):
-    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)\
+
+
+operating_system = os.environ.get('OS', '')
+
+
 
 # Initialize webcam
 # cap = cv2.VideoCapture(0)
@@ -83,7 +88,10 @@ def teacher_page():
     # Initialize webcam
     
     cap = cv2.VideoCapture(0)
-    codec = cv2.VideoWriter_fourcc(*'H264') #mp4v doesn't work
+    if 'Windows' in operating_system:
+        codec = cv2.VideoWriter_fourcc(*'H264')
+    elif 'Darwin' in operating_system:
+        codec = cv2.VideoWriter_fourcc(*'MJPG')
     output = None
 
         
