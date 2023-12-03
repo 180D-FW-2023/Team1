@@ -4,49 +4,41 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import threading
 import time
+from model_utils import *
+import movement
 
 cap = cv2.VideoCapture(0)
 
-FPS = 30
-TEST_PATH = []
-for i in range(0, 50):
-    TEST_PATH.append((50, 100+i*10))
-for i in range(0, 100):
-    TEST_PATH.append((50+i*10, TEST_PATH[-1][1]))
-DRAW_BUFFER = []
-CIRCLE_BASE_RADIUS = 25
-MAX_BUFFER_SIZE = 40
+FPS = 5
 
-
-test_path_ptr = 0
-loop_start = time.monotonic_ns()
+time_start = time.monotonic_ns()
+record_mode = True
+mov = movement.Movement()
 
 while(True):
-    # Get loop start_time
+    # Get loop start time
     loop_start = time.monotonic_ns()
-    
 
     # Get frame
     ret, frame = cap.read()
     frame = cv2.flip(frame, 1)
 
-    # Draw path
-    # If buffer isn't full and there is still a path to draw
-    if len(DRAW_BUFFER) < MAX_BUFFER_SIZE and test_path_ptr < len(TEST_PATH):
-        DRAW_BUFFER.append(TEST_PATH[test_path_ptr])
-        test_path_ptr += 1
-    # If buffer is full and there is still a path to draw
-    elif test_path_ptr < len(TEST_PATH):
-        DRAW_BUFFER.pop(0)
-        DRAW_BUFFER.append(TEST_PATH[test_path_ptr])
-        test_path_ptr += 1
-    # If path to draw is done, start removing old items
+    # For testing, after 10 seconds, set to display mode
+    if record_mode and time.monotonic_ns() > time_start + (5*1_000_000_000):
+        record_mode = False
+        print("Entering display mode")
+
+    # In recording mode, add points to movement object
+    if record_mode:
+        new_points = StickFigureEstimator.generate_points(frame)
+        mov.add_captured_points(new_points)
+        frame = StickFigureEstimator.overlay_points(frame, new_points)
+    
+    # In draw mode, get next frame of movement display
     else:
-        DRAW_BUFFER.pop(0)
-        if len(DRAW_BUFFER) == 0:
-            test_path_ptr = 0
-    for (x, y), i in zip(DRAW_BUFFER, range(len(DRAW_BUFFER), -1, -1)):
-        cv2.circle(frame, center=(x,y), radius=CIRCLE_BASE_RADIUS-i//2, color=(255, i*5, i*5), thickness=-1)
+        if mov.is_done():
+            mov.reset()
+        frame = mov.display_and_advance_frame(frame)
 
     # Display frame
     cv2.imshow('RGB', frame)
