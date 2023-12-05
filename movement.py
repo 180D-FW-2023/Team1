@@ -64,7 +64,7 @@ class Movement():
 
     def __get_stick_figure_lines(self, points):
         hip_midpoint = None if (points[Movement.POINT_RIGHT_HIP] == None or points[Movement.POINT_LEFT_HIP] == None) \
-                    else ((int(points[Movement.POINT_RIGHT_HIP][0] +  points[Movement.POINT_LEFT_HIP][0]) // 2), (int(points[Movement.POINT_RIGHT_HIP][1] +  points[Movement.POINT_LEFT_HIP][1]) // 2))
+                    else (((points[Movement.POINT_RIGHT_HIP][0] +  points[Movement.POINT_LEFT_HIP][0]) / 2), ((points[Movement.POINT_RIGHT_HIP][1] +  points[Movement.POINT_LEFT_HIP][1]) / 2))
         res = {
             "RIGHT_UPPER_ARM" : (points[Movement.POINT_RIGHT_SHOULDER], points[Movement.POINT_RIGHT_ELBOW]),
             "RIGHT_LOWER_ARM" : (points[Movement.POINT_RIGHT_ELBOW], points[Movement.POINT_RIGHT_WRIST]),
