@@ -9,7 +9,7 @@ import movement
 
 cap = cv2.VideoCapture(0)
 
-FPS = 5
+FPS = 24
 
 time_start = time.monotonic_ns()
 record_mode = True
@@ -31,13 +31,16 @@ while(True):
     # In recording mode, add points to movement object
     if record_mode:
         new_points = StickFigureEstimator.generate_points(frame)
-        mov.add_captured_points(new_points)
         frame = StickFigureEstimator.overlay_points(frame, new_points)
+        new_points[movement.Movement.POINT_JUMP] = None # TODO: get jump bool from IMU
+        mov.add_captured_points(new_points)
     
     # In draw mode, get next frame of movement display
     else:
         if mov.is_done():
+            s = mov.get_movement_json()
             mov.reset()
+            mov = movement.Movement(s)
         frame = mov.display_and_advance_frame(frame)
 
     # Display frame

@@ -24,6 +24,7 @@ class Movement():
     POINT_LEFT_KNEE = 14
     POINT_RIGHT_FOOT = 15
     POINT_LEFT_FOOT = 16
+    POINT_JUMP = 17
 
     RED = (0, 0, 255)
     STICK_FIGURE_THICKNESS = 5
@@ -36,16 +37,29 @@ class Movement():
             imported_path = json.JSONDecoder().decode(mov_json)
             # Perform JSON conversion for our expected formatting
             for points in imported_path:
-                new_points = {int(x) : (tuple(y) if y else None) for x,y in points.items()}
+                new_points = {}
+                for k, v in points.items():
+                    if v is not None:
+                        # TODO: if k is POINTS_JUMP, what to do
+                        v = (np.float32(v[0]), np.float32(v[1]))
+                    new_points[int(k)] = v
                 self.captured_path.append(new_points)
         self.active_points = []
 
     def get_movement_json(self):
         # Encode into json
+        path_to_send = list(self.captured_path)
+        for path_points in path_to_send:
+            for k in path_points:
+                if k == Movement.POINT_JUMP:
+                    pass # TODO: how to encode jump (True / False)?
+                elif path_points[k] is not None:
+                    path_points[k] = (str(path_points[k][0]), str(path_points[k][1]))
         res = json.JSONEncoder().encode(self.captured_path)
         return res
 
     def add_captured_points(self, points):
+        points = dict(points)
         self.captured_path.append(points)
 
     def __get_stick_figure_lines(self, points):
@@ -67,7 +81,6 @@ class Movement():
         return res
 
     def display_and_advance_frame(self, frame):
-        # TODO: change from absolute x y to scaling
         # ------------------
         # DRAW HAND MOVEMENT
         # ------------------
@@ -104,12 +117,14 @@ class Movement():
             else:
                 break
             for dx, dy in zip(np.linspace(thisx, nextx, smooth_factor), np.linspace(thisy, nexty, smooth_factor)):
-                smoothed_movement.append((int(dx), int(dy)))
+                smoothed_movement.append((dx, dy))
 
         # Display smoothed movement
         for coords, i in zip(smoothed_movement, range(len(smoothed_movement), -1, -1)):
             if coords is not None:
-                x, y = coords
+                # Convert from relative to absolute
+                x, y = int(coords[0] * frame.shape[1]), int(coords[1] * frame.shape[0])
+                # Display
                 cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(255, min(i*2, 255), min(i*2, 255)), thickness=-1)
         # -----------------
         # DRAW STICK FIGURE
@@ -117,6 +132,10 @@ class Movement():
         if self.test_path_ptr < len(self.captured_path):
             for (pointa, pointb) in self.__get_stick_figure_lines(self.captured_path[self.test_path_ptr]).values():
                 if pointa and pointb:
+                    # Convert from relative to absolute
+                    pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
+                    pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
+                    # Display
                     frame = cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
         return frame
 

@@ -69,6 +69,7 @@ class MirrorMeIMU():
     def stop(self):
         self.event.clear()
         self.thread.join()
+        self.buffer = []
 
     def get_values(self):
         return self.buffer

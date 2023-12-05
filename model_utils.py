@@ -45,16 +45,18 @@ class StickFigureEstimator():
         for i, (y, x, score) in enumerate(keypoints_with_scores[0][0]):
             #print(x, y)
             if score > 0.4:
-                x = int(x * image.shape[1])
-                y = int(y * image.shape[0])
                 points[i] = (x, y)
             else:
                 points[i] = None
         
         return points
 
-
+    
     def overlay_points(image, points):
+      points = dict(points)
+      for k in points:
+        if points[k] is not None:
+          points[k] = (int(points[k][0] * image.shape[1]), int(points[k][1] * image.shape[0]))
       for i in range(17):
         if points[i]:
           image = cv2.circle(image, points[i], 20, (255, 0, 0), -1)
