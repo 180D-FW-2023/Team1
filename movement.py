@@ -33,6 +33,7 @@ class Movement():
     def __init__(self, mov_json = None):
         self.test_path_ptr = 0
         self.captured_path = []
+        self.jump_counter = 0
         if mov_json != None:
             imported_path = json.JSONDecoder().decode(mov_json)
             # Perform JSON conversion for our expected formatting
@@ -144,9 +145,12 @@ class Movement():
         # -----------------
         if self.test_path_ptr < len(self.captured_path):
             if self.captured_path[self.test_path_ptr][Movement.POINT_JUMP] == True:
+                self.jump_counter += 24
+            if self.jump_counter > 0:
                 text_spot = (int(0.45 * frame.shape[1]), int(0.1 * frame.shape[0]))
                 frame = cv2.putText(frame, text='JUMP!', org=text_spot, fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
                    fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
+                self.jump_counter -= 1
         return frame
 
     def is_done(self):
