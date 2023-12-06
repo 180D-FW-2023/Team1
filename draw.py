@@ -6,8 +6,17 @@ import threading
 import time
 from model_utils import *
 import movement
+import bluetooth
 
 cap = cv2.VideoCapture(0)
+server_sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+server_sock.bind(("", bluetooth.PORT_ANY))
+server_sock.listen(1)
+port = server_sock.getsockname()[1]
+print("Waiting for connection on RFCOMM channel", port)
+client_sock,address = server_sock.accept()
+print("Accepted connection from ",address)
+client_sock.settimeout(0)
 
 FPS = 24
 
@@ -18,6 +27,10 @@ mov = movement.Movement()
 while(True):
     # Get loop start time
     loop_start = time.monotonic_ns()
+    try:
+        data = client_sock.recv(1024)
+    except OSError:
+        data = None
 
     # Get frame
     ret, frame = cap.read()
@@ -32,7 +45,11 @@ while(True):
     if record_mode:
         new_points = StickFigureEstimator.generate_points(frame)
         frame = StickFigureEstimator.overlay_points(frame, new_points)
-        new_points[movement.Movement.POINT_JUMP] = None # TODO: get jump bool from IMU
+        if data != None:
+            new_points[movement.Movement.POINT_JUMP] = True # TODO: get jump bool from IMU
+        else:
+            new_points[movement.Movement.POINT_JUMP] = False
+
         mov.add_captured_points(new_points)
     
     # In draw mode, get next frame of movement display

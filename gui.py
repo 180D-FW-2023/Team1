@@ -8,18 +8,31 @@ import threading
 import movement 
 from model_utils import StickFigureEstimator
 import time
+import bluetooth
+import paho.mqtt.client as mqtt
 #import pyttsx3
 
 
-FPS = 24
 
+received_data = None
+FPS = 24
 # Function to convert OpenCV image format to Streamlit format
 def opencv_to_streamlit(frame):
     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)\
 
+def on_message(client,userdata,msg):
+    received_data = msg.payload()
+
+def on_connect(client,userdata,flags,rc):
+    if rc == 0:
+        print("client connected to broker")
+    else:
+        print("failed to connect")
+
+
 
 operating_system = os.environ.get('OS', '')
-
+client = mqtt.Client()
 # Initialize webcam
 # cap = cv2.VideoCapture(0)
 # codec = cv2.VideoWriter_fourcc(*'XVID')
@@ -36,26 +49,57 @@ st.markdown("""
 def student_page():
     st.title("Follow the actions on the screen!")
     st.header("Score:")
-    # video_file = open('CAPTURE.mp4','rb')
-    # video_bytes = video_file.read()
-    # st.video(video_bytes)
+    client.on_message = on_message
+    client.on_connect = on_connect
+    client.connect("172.20.10.3")
+    client.subscribe('movement')
+    client.loop_forever()
+ 
+    cap = cv2.VideoCapture(0)
+    if 'Windows' in operating_system:
+        codec = cv2.VideoWriter_fourcc(*'H264')
+    else:
+        codec = cv2.VideoWriter_fourcc(*'MJPG')
+    output = None
+    container_3 = st.empty()
+    frame_holder = container_3.empty()
 
-# def callback(recognizer, audio):                          # this is called from the background thread
-#     try:
-#         ans = recognizer.recognize_google(audio)
-#         print("You said " + ans)  # received audio data, now need to recognize it
-#         if ans == 'start':
-#             st.session_state['start'] = 1
-#         else:
-#             st.session_state['start'] = 0
-#         if ans == 'stop':
-#             st.session_state['stop'] = 1
-#         else:
-#             st.session_state['stop'] = 0
-#     except sr.RequestError:
-#         print("Google not available") 
-#     except sr.UnknownValueError:
-#         print("Can't understand")
+    # Continuous loop to update the live feed
+    got_movement = False
+    while cap.isOpened():
+        # Get loop start time
+        loop_start = time.monotonic_ns()
+
+        # Get frame
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # Flip horizontally for mirror effect
+        frame = cv2.flip(frame, 1)
+
+        # If in recording mode, add points to movement object
+
+        
+        if not got_movement and received_data != None:
+            mov = movement.Movement(received_data)
+            got_movement = True
+        
+        if got_movement == True:
+            if mov.is_done():
+                mov.reset()
+            frame = mov.display_and_advance_frame(frame)
+
+        # Convert the color format for Streamlit
+        frame = opencv_to_streamlit(frame)
+        frame_holder.image(frame)
+
+        # Spin loop to get 1/FPS FPS
+        while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):
+            pass
+
+    cap.release()
+    
 
 
 
@@ -81,10 +125,10 @@ def teacher_page():
     container_2 =  st.empty()
     container_3 = st.empty()
     recording = 0
-    if os.path.isfile("CAPTURE.mp4"):
-            video_file = open('CAPTURE.mp4','rb')
-            video_bytes = video_file.read()
-            frame_holder = container_3.video(video_bytes)
+    # if os.path.isfile("CAPTURE.mp4"):
+    #         video_file = open('CAPTURE.mp4','rb')
+    #         video_bytes = video_file.read()
+    #         frame_holder = container_3.video(video_bytes)
     
     if st.session_state['first']:
         print("first state")
@@ -126,8 +170,13 @@ def teacher_page():
             st.rerun()
         elif send_btN:
             print("clicked send button")
+            client.connect("172.20.10.3")
             st.session_state['first'] = True
             st.session_state['third'] = False
+            s = st.session_state.mov.get_movement_json()
+            client.loop_start()
+            client.publish("movement",s,qos=1)
+            client.disconnect()
             st.rerun()
 
 
@@ -141,7 +190,16 @@ def teacher_page():
         codec = cv2.VideoWriter_fourcc(*'MJPG')
     output = None
 
-        
+    if 'bluetooth' not in st.session_state:
+        server_sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+        server_sock.bind(("", bluetooth.PORT_ANY))
+        server_sock.listen(1)
+        port = server_sock.getsockname()[1]
+        print("Waiting for connection on RFCOMM channel", port)
+        client_sock,address = server_sock.accept()
+        print("Accepted connection from ",address)
+        client_sock.settimeout(0)
+        st.session_state.bluetooth = client_sock
 
     if 'mov' not in st.session_state:
         st.session_state.mov = movement.Movement()
@@ -149,6 +207,10 @@ def teacher_page():
     while cap.isOpened():
         # Get loop start time
         loop_start = time.monotonic_ns()
+        try:
+            data = st.session_state.bluetooth.recv(1024)
+        except OSError:
+            data = None
 
         # Get frame
         ret, frame = cap.read()
@@ -162,7 +224,10 @@ def teacher_page():
         if st.session_state['second']:
             new_points = StickFigureEstimator.generate_points(frame)
             frame = StickFigureEstimator.overlay_points(frame, new_points)
-            new_points[movement.Movement.POINT_JUMP] = False # TODO: get jump bool from IMU
+            if data != None:
+                new_points[movement.Movement.POINT_JUMP] = True # TODO: get jump bool from IMU
+            else:
+                new_points[movement.Movement.POINT_JUMP] = False
             st.session_state.mov.add_captured_points(new_points)
         elif st.session_state['third']:
             if st.session_state.mov.is_done():
