@@ -40,8 +40,10 @@ class Movement():
                 new_points = {}
                 for k, v in points.items():
                     if v is not None:
-                        # TODO: if k is POINTS_JUMP, what to do
-                        v = (np.float32(v[0]), np.float32(v[1]))
+                        if int(k) == Movement.POINT_JUMP:
+                            pass
+                        else:
+                            v = (np.float32(v[0]), np.float32(v[1]))
                     new_points[int(k)] = v
                 self.captured_path.append(new_points)
         self.active_points = []
@@ -52,7 +54,7 @@ class Movement():
         for path_points in path_to_send:
             for k in path_points:
                 if k == Movement.POINT_JUMP:
-                    pass # TODO: how to encode jump (True / False)?
+                    pass
                 elif path_points[k] is not None:
                     path_points[k] = (str(path_points[k][0]), str(path_points[k][1]))
         res = json.JSONEncoder().encode(self.captured_path)
@@ -137,6 +139,14 @@ class Movement():
                     pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
                     # Display
                     frame = cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+        # -----------------
+        # SEND JUMP MESSAGE
+        # -----------------
+        if self.test_path_ptr < len(self.captured_path):
+            if self.captured_path[self.test_path_ptr][Movement.POINT_JUMP] == True:
+                text_spot = (int(0.45 * frame.shape[1]), int(0.1 * frame.shape[0]))
+                frame = cv2.putText(frame, text='JUMP!', org=text_spot, fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
+                   fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
         return frame
 
     def is_done(self):
