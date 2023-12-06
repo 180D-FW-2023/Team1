@@ -3,9 +3,15 @@ import cv2
 import os
 import tempfile
 import numpy as np
-import speech_recognition as sr
+#import speech_recognition as sr
 import threading
+import movement 
+from model_utils import StickFigureEstimator
+import time
 #import pyttsx3
+
+
+FPS = 24
 
 # Function to convert OpenCV image format to Streamlit format
 def opencv_to_streamlit(frame):
@@ -13,8 +19,6 @@ def opencv_to_streamlit(frame):
 
 
 operating_system = os.environ.get('OS', '')
-
-
 
 # Initialize webcam
 # cap = cv2.VideoCapture(0)
@@ -36,22 +40,22 @@ def student_page():
     # video_bytes = video_file.read()
     # st.video(video_bytes)
 
-def callback(recognizer, audio):                          # this is called from the background thread
-    try:
-        ans = recognizer.recognize_google(audio)
-        print("You said " + ans)  # received audio data, now need to recognize it
-        if ans == 'start':
-            st.session_state['start'] = 1
-        else:
-            st.session_state['start'] = 0
-        if ans == 'stop':
-            st.session_state['stop'] = 1
-        else:
-            st.session_state['stop'] = 0
-    except sr.RequestError:
-        print("Google not available") 
-    except sr.UnknownValueError:
-        print("Can't understand")
+# def callback(recognizer, audio):                          # this is called from the background thread
+#     try:
+#         ans = recognizer.recognize_google(audio)
+#         print("You said " + ans)  # received audio data, now need to recognize it
+#         if ans == 'start':
+#             st.session_state['start'] = 1
+#         else:
+#             st.session_state['start'] = 0
+#         if ans == 'stop':
+#             st.session_state['stop'] = 1
+#         else:
+#             st.session_state['stop'] = 0
+#     except sr.RequestError:
+#         print("Google not available") 
+#     except sr.UnknownValueError:
+#         print("Can't understand")
 
 
 
@@ -59,8 +63,8 @@ def teacher_page():
     st.title("Show your students what to do!")
     st.header("Webcam Live Feed")
     recording = False
-    r = sr.Recognizer()
-    r.listen_in_background(sr.Microphone(), callback)
+    # r = sr.Recognizer()
+    # r.listen_in_background(sr.Microphone(), callback)
     
     # Session state for recording flag and path of the recorded video
     # if 'recording' not in st.session_state:
@@ -68,20 +72,63 @@ def teacher_page():
     # if 'recorded_video' not in st.session_state:
     #     st.session_state['recorded_video'] = None
     # Button to start/stop recording
+    if 'first' not in st.session_state:
+        st.session_state['first'] = True
+    if 'second' not in st.session_state:
+        st.session_state['second'] = False
+    if 'third' not in st.session_state:
+        st.session_state['third'] = False
     container_2 =  st.empty()
     container_3 = st.empty()
-    start_btN = container_2.button("Start Recording")
     recording = 0
     if os.path.isfile("CAPTURE.mp4"):
             video_file = open('CAPTURE.mp4','rb')
             video_bytes = video_file.read()
             frame_holder = container_3.video(video_bytes)
-    if start_btN or st.session_state['start'] or st.session_state['stop']:
-        container_2.empty()
-        end_btN = container_2.button("Stop Recording")
+    
+    if st.session_state['first']:
+        print("first state")
+        start_btN = container_2.button("Record")
         frame_holder = container_3.empty()
         recording = 1
-  
+        if start_btN:
+            print("clicked start button")
+            st.session_state['second'] = True
+            st.session_state['first'] = False
+            st.rerun()
+
+    elif st.session_state['second']:
+        print("second state")
+        end_bTN = container_2.button("Stop Recording")
+        frame_holder = container_3.empty()
+        recording = 1
+        if end_bTN:
+            print("clicked stop recording button")
+            st.session_state['third'] = True
+            st.session_state['second'] = False
+            st.rerun()
+
+    elif st.session_state['third']:
+        print("third state")
+        with container_2:
+            col1, col2 = st.columns(2)
+            with col1:
+                restart_btN = st.button("Re-Record")
+            with col2:
+                send_btN = st.button("Send")
+        frame_holder = container_3.empty()
+        recording = 0
+        if restart_btN:
+            print("clicked restart button")
+            st.session_state['second'] = True
+            st.session_state['third'] = False
+            st.session_state.mov = movement.Movement()
+            st.rerun()
+        elif send_btN:
+            print("clicked send button")
+            st.session_state['first'] = True
+            st.session_state['third'] = False
+            st.rerun()
 
 
 
@@ -90,48 +137,65 @@ def teacher_page():
     cap = cv2.VideoCapture(0)
     if 'Windows' in operating_system:
         codec = cv2.VideoWriter_fourcc(*'H264')
-    elif 'Darwin' in operating_system:
+    else:
         codec = cv2.VideoWriter_fourcc(*'MJPG')
     output = None
 
         
 
-
+    if 'mov' not in st.session_state:
+        st.session_state.mov = movement.Movement()
     # Continuous loop to update the live feed and handle recording
-    if start_btN:
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
+    while cap.isOpened():
+        # Get loop start time
+        loop_start = time.monotonic_ns()
 
-            # Convert the color format for Streamlit
-            frame = opencv_to_streamlit(frame)
-        
-            frame_holder.image(frame)
+        # Get frame
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-            if recording and output is None:
-                #setup recording
-                output = cv2.VideoWriter('CAPTURE.mp4', codec, 30, (640, 480))
-            elif recording and output is not None:
-                #write frame
-                output.write(opencv_to_streamlit(frame))
-            elif not recording and output is not None:
-                #release and save and set output to None
-                cap.release()
-                output.release()
-                output = None
-                break
-        cap.release()
+        # Flip horizontally for mirror effect
+        frame = cv2.flip(frame, 1)
+
+        # If in recording mode, add points to movement object
+        if st.session_state['second']:
+            new_points = StickFigureEstimator.generate_points(frame)
+            frame = StickFigureEstimator.overlay_points(frame, new_points)
+            new_points[movement.Movement.POINT_JUMP] = False # TODO: get jump bool from IMU
+            st.session_state.mov.add_captured_points(new_points)
+        elif st.session_state['third']:
+            if st.session_state.mov.is_done():
+                st.session_state.mov.reset()
+            frame = st.session_state.mov.display_and_advance_frame(frame)
+
+        # Convert the color format for Streamlit
+        frame = opencv_to_streamlit(frame)
+        frame_holder.image(frame)
+
+        # Spin loop to get 1/FPS FPS
+        while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):
+            pass
+
+    cap.release()
     
 
 
 # Initialize session state for page tracking
 if 'current_page' not in st.session_state:
     st.session_state['current_page'] = 'home'
-if 'start' not in st.session_state:
-    st.session_state['start'] = 0
-if 'stop' not in st.session_state:
-    st.session_state['stop'] = 0
+# if 'first' not in st.session_state:
+#     st.session_state['first'] = True
+# if 'second' not in st.session_state:
+#     st.session_state['second'] = False
+# if 'third' not in st.session_state:
+#     st.session_state['third'] = False
+
+
+# if 'start' not in st.session_state:
+#     st.session_state['start'] = 0
+# if 'stop' not in st.session_state:
+#     st.session_state['stop'] = 0
 
 # Define a function to change the page
 def change_page(page_name):
