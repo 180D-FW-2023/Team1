@@ -32,7 +32,7 @@ while(True):
     if record_mode:
         new_points = StickFigureEstimator.generate_points(frame)
         frame = StickFigureEstimator.overlay_points(frame, new_points)
-        new_points[movement.Movement.POINT_JUMP] = False # TODO: get jump bool from IMU
+        new_points[movement.Movement.POINT_JUMP] = None # TODO: get jump bool from IMU
         mov.add_captured_points(new_points)
     
     # In draw mode, get next frame of movement display
