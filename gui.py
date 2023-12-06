@@ -14,14 +14,15 @@ import paho.mqtt.client as mqtt
 
 
 
-received_data = None
+received_data = []
 FPS = 24
 # Function to convert OpenCV image format to Streamlit format
 def opencv_to_streamlit(frame):
     return cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)\
 
 def on_message(client,userdata,msg):
-    received_data = msg.payload()
+    received_data.append(msg.payload.decode("utf-8"))
+    print(received_data[-1])
 
 def on_connect(client,userdata,flags,rc):
     if rc == 0:
@@ -51,9 +52,9 @@ def student_page():
     st.header("Score:")
     client.on_message = on_message
     client.on_connect = on_connect
-    client.connect("172.20.10.3")
+    client.connect("172.20.10.6")
     client.subscribe('movement')
-    client.loop_forever()
+    client.loop_start()
  
     cap = cv2.VideoCapture(0)
     if 'Windows' in operating_system:
@@ -81,8 +82,9 @@ def student_page():
         # If in recording mode, add points to movement object
 
         
-        if not got_movement and received_data != None:
-            mov = movement.Movement(received_data)
+        if not got_movement and len(received_data) > 0:
+            mov = movement.Movement(received_data[-1])
+            print("joe")
             got_movement = True
         
         if got_movement == True:
