@@ -1,5 +1,6 @@
 import cv2
-from model_utils import generate_points, overlay_points
+from model_utils import StickFigureEstimator
+
 
 counter = 0
 # Create a VideoCapture object to capture video from the default camera
@@ -15,9 +16,9 @@ while True:
         break
 
     # Generate pose estimation points
-    points = generate_points(frame)
+    points = StickFigureEstimator.generate_points(frame)
     # Display the frame in a window
-    frame = overlay_points(frame, points)
+    frame = StickFigureEstimator.overlay_points(frame, points)
 
     cv2.imshow('frame', frame)
 
