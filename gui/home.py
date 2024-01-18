@@ -22,12 +22,11 @@ def render_home_page():
     st.title("Welcome to MirrorMe!")
     st.header("Join As:")
     col1, col2 = st.columns(2)
+    st.write(st.session_state)
     with col1:
         # Pass a function reference and arguments
         st.markdown('<a href="/teacher_start" target="_self">Next page</a>', unsafe_allow_html=True)
     with col2:
-        pass
-        # Pass a function reference and arguments
-        #st.button("Student", on_click=change_page, args=('student',))
+        st.markdown('<a href="/student_start" target="_self">Next page</a>', unsafe_allow_html=True)
 
 render_home_page()

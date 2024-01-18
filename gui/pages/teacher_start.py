@@ -15,6 +15,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Initialize session state for page tracking
+st.session_state.update(st.session_state)
+st.write(st.session_state)
 st.session_state['current_page'] = 'teacher_start'
 st.header("teacher_page")
 st.markdown('<a href="/student_start" target="_self">Next page</a>', unsafe_allow_html=True)
