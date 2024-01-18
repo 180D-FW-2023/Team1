@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import json
+from model_utils import *
+
 
 class Movement():
     DRAW_BUFFER = []
@@ -83,7 +85,7 @@ class Movement():
         }
         return res
 
-    def display_and_advance_frame(self, frame):
+    def display_and_advance_frame(self, frame, current_points):
         # ------------------
         # DRAW HAND MOVEMENT
         # ------------------
@@ -133,7 +135,16 @@ class Movement():
         # DRAW STICK FIGURE
         # -----------------
         if self.test_path_ptr < len(self.captured_path):
-            for (pointa, pointb) in self.__get_stick_figure_lines(self.captured_path[self.test_path_ptr]).values():
+            captured_points = self.captured_path[self.test_path_ptr]
+            captured_width = StickFigureEstimator.get_width(captured_points)
+
+            current_center = StickFigureEstimator.get_center(current_points)
+            current_width = StickFigureEstimator.get_width(current_points)
+
+            if current_center and current_width and captured_width:
+                scale_factor = current_width / captured_width
+                captured_points = StickFigureEstimator.scale_points(captured_points, current_center, scale_factor)
+            for (pointa, pointb) in self.__get_stick_figure_lines(captured_points).values():
                 if pointa and pointb:
                     # Convert from relative to absolute
                     pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
