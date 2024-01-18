@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_extras.switch_page_button import switch_page
 import cv2
 import os
 import numpy as np
@@ -15,7 +16,6 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Initialize session state for page tracking
-st.session_state.update(st.session_state)
 st.write(st.session_state)
 st.session_state['current_page'] = 'teacher_start'
 st.header("teacher_page")

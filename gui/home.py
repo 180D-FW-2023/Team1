@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_extras.switch_page_button import switch_page
 import cv2
 import os
 import numpy as np
@@ -25,8 +26,8 @@ def render_home_page():
     st.write(st.session_state)
     with col1:
         # Pass a function reference and arguments
-        st.markdown('<a href="/teacher_start" target="_self">Next page</a>', unsafe_allow_html=True)
+        st.button("Teacher", on_click=switch_page, args=('teacher_start',))
     with col2:
-        st.markdown('<a href="/student_start" target="_self">Next page</a>', unsafe_allow_html=True)
+        st.button("Student", on_click=switch_page, args=('student_start',))
 
 render_home_page()
