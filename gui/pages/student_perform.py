@@ -3,7 +3,8 @@ from streamlit_extras.switch_page_button import switch_page
 
 # Change session state based on page
 st.session_state['current_page'] = 'student_start'
-st.session_state['received_movement'] = False
+if 'received_movement' not in st.session_state:
+    st.session_state['received_movement'] = False
 
 def on_recv():
     '''

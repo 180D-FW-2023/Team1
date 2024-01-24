@@ -3,7 +3,8 @@ from streamlit_extras.switch_page_button import switch_page
 
 # Change session state based on page
 st.session_state['current_page'] = 'teacher_record'
-st.session_state['movement_recorded'] = False
+if 'movement_recorded' not in st.session_state:
+    st.session_state['movement_recorded'] = False
 
 # TODO: mqtt: - become main publisher of teacher_room_code
 #             - subscibe to student_room_code
