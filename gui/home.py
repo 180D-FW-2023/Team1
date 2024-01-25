@@ -2,6 +2,8 @@ import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 
 # Change session state based on page
+if st.session_state.get('tried_joining_invalid_room', False):
+    st.header('Invalid Room Code. Please Try Again')
 st.session_state.clear()
 st.session_state['current_page'] = 'home'
 

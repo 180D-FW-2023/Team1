@@ -4,12 +4,16 @@ from streamlit.runtime.scriptrunner import add_script_run_ctx
 import json
 import threading
 import paho.mqtt.client as mqtt
+import time
 
 # Change session state based on page
 st.session_state['current_page'] = 'student_start'
 
 if 'teacher_started' not in st.session_state:
     st.session_state['teacher_started'] = False
+
+if 'valid_room' not in st.session_state:
+    st.session_state['valid_room'] = False
 
 if 'tried_joining_invalid_room' not in st.session_state:
     st.session_state['tried_joining_invalid_room'] = False
@@ -19,9 +23,10 @@ def on_recv(client, userdata, message):
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg:
         return
+    if msg['command'] == 'ack':
+        st.session_state['valid_room'] = True
     if msg['command'] == 'start':
         st.session_state['teacher_started'] = True
-        st.session_state['test'] = st.empty()
 
 if 'mqtt' not in st.session_state:
     mqtt_client = mqtt.Client()
@@ -55,7 +60,6 @@ def render_student_start():
             # TODO: disable text box once filled in
         )
         if name:
-            st.session_state['tried_joining_invalid_room'] = True
             if not st.session_state.get('joined_room', False):
                 st.session_state['name'] = name
                 st.session_state['mqtt'].publish(f'mirrorme/student_{st.session_state["room_code"]}', json.dumps({"command": "join", "name": name}), qos=1)
@@ -65,6 +69,12 @@ def render_student_start():
                                         client.subscribe(f'mirrorme/teacher_{st.session_state["room_code"]}', qos=1))
                 # TODO: check if room already exists, if it doesn't, refresh the page
                 st.session_state['mqtt_thread'].start()
+                loop_start = time.monotonic_ns()
+                while time.monotonic_ns() < loop_start + (1_000_000_000):
+                    pass
+                if not st.session_state.get('valid_room', False):
+                    st.session_state['tried_joining_invalid_room'] = True
+                    switch_page("home")
                 st.header(f"Joined Room: {st.session_state['room_code']}")
                 st.session_state['joined_room'] = True
             exit_button = st.button("Exit", key="exit2")
