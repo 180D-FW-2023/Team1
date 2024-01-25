@@ -37,7 +37,8 @@ class Movement():
         self.captured_path = []
         self.jump_counter = 0
         self.score = 0
-        self.score_counter = 0
+        self.score_counter = 1
+        self.last_seen = {x: None for x in range(17)}
         if mov_json != None:
             imported_path = json.JSONDecoder().decode(mov_json)
             # Perform JSON conversion for our expected formatting
@@ -138,6 +139,14 @@ class Movement():
         # -----------------
         if self.test_path_ptr < len(self.captured_path):
             captured_points = self.captured_path[self.test_path_ptr]
+
+            #smoothing
+            for key, val in captured_points.items():
+                if val is None:
+                    captured_points[key] = self.last_seen[key]
+                else:
+                    self.last_seen[key] = val
+
             captured_width = StickFigureEstimator.get_width(captured_points)
 
             current_center = StickFigureEstimator.get_center(current_points)
@@ -150,7 +159,8 @@ class Movement():
                 score = StickFigureEstimator.score(captured_points[9], current_points[9])
                 self.score += score
                 self.score_counter += 1
-                frame = cv2.putText(frame, text=str(self.score/self.score_counter), org=(100, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
+            
+            frame = cv2.putText(frame, text=str(self.score/self.score_counter), org=(100, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
                    fontScale=3, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
             for (pointa, pointb) in self.__get_stick_figure_lines(captured_points).values():
                 if pointa and pointb:

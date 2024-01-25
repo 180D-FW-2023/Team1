@@ -16,6 +16,7 @@ time_start = time.monotonic_ns()
 record_mode = True
 mov = movement.Movement()
 
+last_seen = {x: None for x in range(17)}
 while(True):
     # Get loop start time
     loop_start = time.monotonic_ns()
@@ -32,7 +33,14 @@ while(True):
     # In recording mode, add points to movement object
     if record_mode:
         new_points = StickFigureEstimator.generate_points(frame)
+        for key, val in new_points.items():
+            if val == None:
+                new_points[key] = last_seen[key]
+            else:
+                last_seen[key] = val
+                
         frame = StickFigureEstimator.overlay_points(frame, new_points)
+
         if None != None:
             new_points[movement.Movement.POINT_JUMP] = True # TODO: get jump bool from IMU
         else:

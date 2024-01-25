@@ -3,6 +3,7 @@ import tensorflow_hub as hub
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import math
 
 
 class StickFigureEstimator():
@@ -32,6 +33,7 @@ class StickFigureEstimator():
         # Output is a [1, 1, 17, 3] tensor.
         keypoints_with_scores = outputs['output_0'].numpy()
         return keypoints_with_scores
+
 
     def generate_points(image):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -86,6 +88,22 @@ class StickFigureEstimator():
                     points[key] = ((points[key][0] - center[0]) * scale_factor + new_center[0], (points[key][1] - center[1]) * scale_factor + new_center[1])
         return points
 
+
+    def score(teacher_hand, student_hand):
+        buffer_distance = 0.05
+        max_distance = 0.8
+        distance = math.sqrt((teacher_hand[0] - student_hand[0])**2 + (teacher_hand[1] - student_hand[1])**2)
+        if distance <= buffer_distance:
+            return 100
+        
+        # If the distance is greater than the maximum distance, return a score of 0
+        if distance > max_distance:
+            return 0
+        
+        # Calculate the score for distances between buffer and max distance
+        # Linearly scale the score from 100 at buffer_distance to 0 at max_distance
+        score = 100 * ((1 - (distance - buffer_distance) / (max_distance - buffer_distance)) ** 2)
+        return score
 
     def overlay_points(image, points, scale_factor=1):
         points = dict(points)
