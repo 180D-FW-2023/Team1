@@ -24,13 +24,13 @@ def render_teacher_record():
     st.header(" ")
     st.header("Students:" )
     if st.button("Exit"):
-        st.session_state['pub'].loop_stop()
-        st.session_state['pub'].disconnect()
+        st.session_state['mqtt'].loop_stop()
+        st.session_state['mqtt'].disconnect()
         switch_page("home")
     recording_button = st.empty()
     recording_button.button('Record')
     if st.button("Send"):
-        st.session_state['pub'].publish('ece180d/test', "joe", qos=1)
+        st.session_state['mqtt'].publish('ece180d/test', "joe", qos=1)
         recording_button.empty()
         recording_button.button('Rerecord')
         st.session_state['movement_recorded'] = True

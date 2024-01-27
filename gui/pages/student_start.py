@@ -15,18 +15,18 @@ if 'teacher_started' not in st.session_state:
 if 'valid_room' not in st.session_state:
     st.session_state['valid_room'] = False
 
-if 'tried_joining_invalid_room' not in st.session_state:
-    st.session_state['tried_joining_invalid_room'] = False
-
 def on_recv(client, userdata, message):
     print("Student Got Message")
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg:
         return
     if msg['command'] == 'ack':
+        st.session_state['teacher_name'] = msg['name']
         st.session_state['valid_room'] = True
     if msg['command'] == 'start':
         st.session_state['teacher_started'] = True
+    if msg['command'] == 'exit':
+       st.session_state['valid_room'] = False
 
 if 'mqtt' not in st.session_state:
     mqtt_client = mqtt.Client()
@@ -43,8 +43,6 @@ if 'mqtt' not in st.session_state:
 
 def render_student_start():
     st.title("Welcome to MirrorMe!")
-    if st.session_state.get('tried_joining_invalid_room', False):
-        st.title("Invalid Room Code. Try again.")
     room_code = st.text_input(
         "Enter Room Code:",
         placeholder = "Room Code",
@@ -60,32 +58,37 @@ def render_student_start():
             # TODO: disable text box once filled in
         )
         if name:
-            if not st.session_state.get('joined_room', False):
+            if not st.session_state.get('valid_room', False):
                 st.session_state['name'] = name
                 st.session_state['mqtt'].publish(f'mirrorme/student_{st.session_state["room_code"]}', json.dumps({"command": "join", "name": name}), qos=1)
                 # TODO: For error reasons, assert that connection was actually made.
                 #           Give a fault if it was not.
                 st.session_state['mqtt'].on_connect = (lambda client, userdata, flags, rc: \
                                         client.subscribe(f'mirrorme/teacher_{st.session_state["room_code"]}', qos=1))
-                # TODO: check if room already exists, if it doesn't, refresh the page
                 st.session_state['mqtt_thread'].start()
                 loop_start = time.monotonic_ns()
-                while time.monotonic_ns() < loop_start + (1_000_000_000):
+                while (time.monotonic_ns() < loop_start + (2_000_000_000)) and not st.session_state.get('valid_room', False):
+                    # Timeout for finding a room
                     pass
                 if not st.session_state.get('valid_room', False):
-                    st.session_state['tried_joining_invalid_room'] = True
+                    st.session_state['message'] = 'Invalid Room Code. Please Try Again'
                     switch_page("home")
-                st.header(f"Joined Room: {st.session_state['room_code']}")
-                st.session_state['joined_room'] = True
+                st.header(f"Joined {st.session_state.get('teacher_name', 'Teacher')}'s Room: {st.session_state['room_code']}")
             exit_button = st.button("Exit", key="exit2")
             while True:
                 if st.session_state.get('teacher_started', False):
                     switch_page("student_perform")
-                if exit_button:
+                if exit_button or not st.session_state.get('valid_room', False):
+                    # If room was closed
+                    if not st.session_state.get('valid_room', False):
+                        st.session_state['message'] = 'Teacher Closed Room.'
+                    # If exit button was pressed
+                    else:
+                        st.session_state['mqtt'].publish(f'mirrorme/student_{st.session_state["room_code"]}', json.dumps({"command": "exit", "name": st.session_state['name']}), qos=1)
                     st.session_state['mqtt'].disconnect()
                     switch_page("home")
     if st.button("Exit", key="exit1"):
-        if st.session_state.get('joined_room', False):
+        if st.session_state.get('valid_room', False):
             st.session_state['mqtt'].publish(f'mirrorme/student_{st.session_state["room_code"]}', json.dumps({"command": "exit", "name": st.session_state['name']}), qos=1)
         st.session_state['mqtt'].disconnect()
         switch_page("home")

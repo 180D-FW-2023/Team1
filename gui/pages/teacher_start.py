@@ -6,6 +6,7 @@ import random
 import string
 import json
 import threading
+import time
     
 # Change session state based on page
 st.session_state['current_page'] = 'teacher_start'
@@ -26,10 +27,10 @@ def on_recv(client, userdata, message):
     if 'command' not in msg or 'name' not in msg:
         return
     if msg['command'] == 'exit':
-        st.session_state['students'].remove(msg['name'])
+        del st.session_state['students'][msg['name']]
     elif msg['command'] == 'join':
         st.session_state['students'].update({msg['name'] : None})
-        st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "ack"}), qos=1)
+        st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "ack", "name" : st.session_state['teacher_name']}), qos=1)
 
 # Create MQTT object
 if 'mqtt' not in st.session_state:
@@ -47,21 +48,36 @@ if 'mqtt' not in st.session_state:
     mqtt_thread.start()
     st.session_state['mqtt'] = mqtt_client
 
+
 def render_teacher_start():
     st.title("Welcome to MirrorMe!")
-    st.header(f"Room Code: {st.session_state['room_code']}")
-    st.header(" ")
-    st.header("Students Joined:" )
+    st.header("Create a Room For Your Students!")
+    name = st.text_input(
+        "Enter Your Name: ",
+        placeholder = "Name",
+        # TODO: disable text box once filled in
+    )
+    if name:
+        st.session_state['teacher_name'] = name
+        st.header(f"Room Code: {st.session_state['room_code']}")
+        st.header("Students Joined:" )
+        students = st.empty()
+        exit_button2 = st.button("Exit", key="exit2")
+        start_button = st.button("Start")
+        while True:
+            students.markdown(", ".join(st.session_state['students'].keys()))
+            time.sleep(0.1)
+            if exit_button2:
+                st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "exit"}), qos=1)
+                st.session_state['mqtt'].disconnect()
+                switch_page("home")
+            if start_button:
+                st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "start"}), qos=1)
+                switch_page("teacher_record")
     exit_button = st.button("Exit")
-    start_button = st.button("Start")
-    if 'students' in st.session_state:
-        for student, _ in st.session_state['students'].items():
-            st.write(student)
     if exit_button:
+        st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "exit"}), qos=1)
         st.session_state['mqtt'].disconnect()
         switch_page("home")
-    if start_button:
-        st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "start"}), qos=1)
-        switch_page("teacher_record")
 
 render_teacher_start()
