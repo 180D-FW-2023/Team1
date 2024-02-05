@@ -185,6 +185,13 @@ class Movement():
     def is_done(self):
         return self.test_path_ptr >= len(self.captured_path)
 
+    def get_score(self):
+        return str(self.score/self.score_counter)
+
     def reset(self):
         self.test_path_ptr = 0
         self.active_points = []
+        self.jump_counter = 0
+        self.score = 0
+        self.score_counter = 1
+        self.last_seen = {x: None for x in range(17)}
