@@ -39,6 +39,7 @@ class Movement():
         self.score = 0
         self.score_counter = 1
         self.last_seen = {x: None for x in range(17)}
+        self.positions = [{x: None for x in range(17)}]
         if mov_json != None:
             imported_path = json.JSONDecoder().decode(mov_json)
             # Perform JSON conversion for our expected formatting
@@ -140,12 +141,50 @@ class Movement():
         if self.test_path_ptr < len(self.captured_path):
             captured_points = self.captured_path[self.test_path_ptr]
 
-            #smoothing
+            # smoothing captured points
             for key, val in captured_points.items():
                 if val is None:
                     captured_points[key] = self.last_seen[key]
                 else:
                     self.last_seen[key] = val
+            
+            # smoothing current points 
+            alpha = 0.2
+            
+            for key, val in current_points.items():
+                if val is None:
+                    current_points[key] = self.positions[-1][key]
+            
+            self.positions.append(current_points)
+
+            
+            for k in range(17):
+                smoothed_data = [None]
+                for i in range(max(0, len(self.positions) - 10), len(self.positions), 1):
+                    if self.positions[i][k] is not None:
+                        if smoothed_data[-1] is None:
+                            st_x = alpha * self.positions[i][k][0]
+                            st_y = alpha * self.positions[i][k][1]
+                            smoothed_data.append((st_x, st_y))
+                        else:
+                            st_x = alpha * self.positions[i][k][0] + (1 - alpha) * smoothed_data[-1][0]
+                            st_y = alpha * self.positions[i][k][1] + (1 - alpha) * smoothed_data[-1][1]
+                            smoothed_data.append((st_x, st_y))
+                    else:
+                        smoothed_data.append(smoothed_data[-1])
+                current_points[k] = smoothed_data[-1]
+            '''
+            for k in range(17):
+                sum = (0, 0)
+                count = 0
+                for i in range(max(0, len(self.positions) - 5), len(self.positions), 1):
+                    if self.positions[i][k] is not None:
+                        sum = (sum[0] + self.positions[i][k][0], sum[1] + self.positions[i][k][1])
+                        count += 1 
+                
+                if count > 2:
+                    current_points[k] = (sum[0] / count, sum[1] / count)
+            '''
 
             captured_width = StickFigureEstimator.get_width(captured_points)
 
@@ -161,7 +200,7 @@ class Movement():
                 self.score_counter += 1
             
             frame = cv2.putText(frame, text=str(self.score/self.score_counter), org=(100, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
-                   fontScale=3, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
+                fontScale=3, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
             for (pointa, pointb) in self.__get_stick_figure_lines(captured_points).values():
                 if pointa and pointb:
                     # Convert from relative to absolute
