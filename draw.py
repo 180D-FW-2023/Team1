@@ -6,6 +6,7 @@ import threading
 import time
 from model_utils import *
 import movement
+from point import *
 
 cap = cv2.VideoCapture(0)
 
@@ -42,9 +43,9 @@ while(True):
         frame = StickFigureEstimator.overlay_points(frame, new_points)
 
         if None != None:
-            new_points[movement.Movement.POINT_JUMP] = True # TODO: get jump bool from IMU
+            new_points[POINT_JUMP] = True # TODO: get jump bool from IMU
         else:
-            new_points[movement.Movement.POINT_JUMP] = False
+            new_points[POINT_JUMP] = False
 
         mov.add_captured_points(new_points)
     

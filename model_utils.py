@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import math
-
+from point import *
 
 class StickFigureEstimator():
     model_name = "movenet_lightning"
@@ -55,29 +55,31 @@ class StickFigureEstimator():
 
 
     def get_width(points):
-        '''
-        if points[5] and points[6]:
-            return abs(points[5][0] - points[6][0])
+        if points[POINT_LEFT_SHOULDER] and points[POINT_RIGHT_SHOULDER]:
+            # return abs(points[POINT_LEFT_SHOULDER][0] - points[POINT_RIGHT_SHOULDER][0])
+            # do euclidian distance
+            return math.sqrt((points[POINT_LEFT_SHOULDER][0] - points[POINT_RIGHT_SHOULDER][0])**2 + (points[POINT_LEFT_SHOULDER][1] - points[POINT_RIGHT_SHOULDER][1])**2)
+        else:
+            return None
         '''
         if points[1] and points[2]:
             return abs(points[1][0] - points[2][0])
         else:
             return None
-
+        '''
+        
 
     def get_center(points):
-        '''
-        if points[5] and points[6] and points[11] and points[12]:
-            center_x = (points[5][0] + points[6][0] +
-                        points[11][0] + points[12][0]) / 4
-            center_y = (points[5][1] + points[6][1] +
-                        points[11][1] + points[12][1]) / 4
-            return (center_x, center_y)
+        if points[POINT_LEFT_SHOULDER] and points[POINT_RIGHT_SHOULDER]:
+            return (points[POINT_LEFT_SHOULDER][0] + points[POINT_RIGHT_SHOULDER][0]) / 2, (points[POINT_LEFT_SHOULDER][1] + points[POINT_RIGHT_SHOULDER][1]) / 2
+        else:
+            return None
         '''
         if points[0]:
             return (points[0][0], points[0][1])
         else:
             return None
+        '''
 
 
     def scale_points(points, new_center, scale_factor=1):
