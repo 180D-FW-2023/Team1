@@ -2,29 +2,47 @@ import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 import cv2
 import time
+import json
+import movement
+from model_utils import *
 
 # Change session state based on page
 st.session_state['current_page'] = 'student_perform'
 FPS = 30
 
-if 'received_movement' not in st.session_state:
-    st.session_state['received_movement'] = False
+if 'mode' not in st.session_state:
+    st.session_state['mode'] = "waiting"
 
-def on_recv():
-    '''
-    convert incoming message to json msg
-    if msg['command'] == 'mov':
-        # get movement
-    '''
-    pass
+if 'score' not in st.session_state:
+    st.session_state['score'] = None
+
+def on_recv(client, userdata, message):
+    print("Student got message")
+    msg = json.loads(message.payload.decode("utf-8"))
+    if 'command' not in msg:
+        return
+    if msg['command'] == 'exit':
+       st.session_state['valid_room'] = False
+    elif msg['command'] == 'movement':
+        st.session_state['mode'] = "idle"
+        st.session_state['score'] = None
+        mov = msg['mov']
+        st.session_state['movement'] = movement.Movement(mov)
+
+def start_stop_on_click():
+    if st.session_state['mode'] == "idle":
+        st.session_state['mode'] = "performing"
+    elif st.session_state['mode'] == "performing":
+        st.session_state['mode'] = "idle"
 
 def render_student_perform():
-    st.title("Welcome to MirrorMe!")
-    st.header("Waiting for teacher to send movement")
+    st.session_state['mqtt'].on_message = on_recv
+    message = st.empty()
     frame_holder = st.empty()
     fps_counter = st.empty()
     exit_button = st.button("Exit")
     start_stop_button = st.empty()
+    start_stop_button.button("Start/Stop", key=str(time.monotonic_ns()), on_click=start_stop_on_click)
     cap = cv2.VideoCapture(0)
     while cap.isOpened():
         # Get loop start time
@@ -37,6 +55,29 @@ def render_student_perform():
         frame = cv2.flip(frame, 1)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
+        
+        if st.session_state['mode'] == "waiting":
+            message.header("Waiting for Teacher to Send Movement.")
+       
+        elif st.session_state['mode'] == "idle":
+            st.session_state['movement'].reset()
+            if st.session_state['score'] is None:
+                message.header("Got a new movement from Teacher. Press Start to perform.")
+            else:
+                message.header(f"You got a score of {st.session_state['score']}!. Press Start to try again!")
+      
+        elif st.session_state['mode'] == "performing":
+            message.header("Performing movement. Press Stop to Cancel.")
+            if not st.session_state['movement'].is_done():
+                new_points = StickFigureEstimator.generate_points(frame)
+                frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
+                score = st.session_state['movement'].get_score()
+                st.session_state['score'] = score
+            else:
+                score = st.session_state['movement'].get_score()
+                st.session_state['mqtt'].publish(f'mirrorme/student_{st.session_state["room_code"]}', json.dumps({"command": "score", "name": st.session_state['name'], "score": score}), qos=1)
+                st.session_state['mode'] = "idle"
+        
         frame_holder.image(frame)
         # Spin loop to get 1/FPS FPS
         while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):
@@ -44,9 +85,14 @@ def render_student_perform():
         # Update FPS counter
         fps_counter.markdown(f"FPS: {str(1_000_000_000.0 / (time.monotonic_ns() - loop_start))}")
         # Handle Buttons
-        if exit_button:
+        if exit_button or not st.session_state.get('valid_room', False):
             cap.release()
-            st.session_state['mqtt'].loop_stop()
+            # If room was closed
+            if not st.session_state.get('valid_room', False):
+                st.session_state['message'] = 'Teacher Closed Room.'
+            # If exit button was pressed
+            else:
+                st.session_state['mqtt'].publish(f'mirrorme/student_{st.session_state["room_code"]}', json.dumps({"command": "exit", "name": st.session_state['name']}), qos=1)
             st.session_state['mqtt'].disconnect()
             switch_page("home")
     cap.release()

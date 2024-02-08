@@ -17,7 +17,7 @@ if 'room_code' not in st.session_state:
 
 # Initialize list of students
 if 'students' not in st.session_state:
-    st.session_state['students'] = {'Aadhi': None, 'Esha': None}
+    st.session_state['students'] = {}
 
 
 # On receive callback for student channel
