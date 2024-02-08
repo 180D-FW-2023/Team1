@@ -9,14 +9,18 @@ def classify_jump(acc_arr):
         return True
     return False
 
-bd_addr = "F0:9E:4A:69:A9:41"
-port = 4
 
 
 
 def main():
-    sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
-    sock.connect((bd_addr, port))
+    server_sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+    server_sock.bind(("", bluetooth.PORT_ANY))
+    server_sock.listen(1)
+    port = server_sock.getsockname()[1]
+    print("Waiting for connection on RFCOMM channel", port)
+    client_sock,address = server_sock.accept()
+    print("Accepted connection from ",address)
+    client_sock.settimeout(0)
     imu = MirrorMeIMU()
     time.sleep(2)
     imu.start()
@@ -31,7 +35,7 @@ def main():
         buf = imu.get_values()
         if len(buf) > 0:
             if classify_jump(buf[-1]) is True:
-                sock.send("jump")
+                client_sock.send("jump")
                 print("jump")
     imu.stop()
     sock.close()
