@@ -1,5 +1,6 @@
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
+from streamlit_lottie import st_lottie
 
 # Change session state based on page
 if st.session_state.get('message', False):
@@ -7,15 +8,37 @@ if st.session_state.get('message', False):
 st.session_state.clear()
 st.session_state['current_page'] = 'home'
 
+with open('gui/style.css') as f:    
+    st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+def card():
+    return f'''<div class="card" style="width: 40rem;">
+  <img src="..." class="card-img-top" alt="...">
+  <div class="card-body">
+    <h5 class="card-title">Card title</h5>
+    <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+    <a href="#" class="btn btn-primary">Go somewhere</a>
+  </div>
+</div>'''
+
 def render_home_page():
-    st.title("Welcome to MirrorMe!")
-    st.header("Join As:")
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([2, 10])
     with col1:
-        if st.button("Teacher"):
-            switch_page("teacher_start")
+        st_lottie('https://lottie.host/edb12174-1102-4fc5-a7b7-e695bf7b52c2/ui94YFdvMi.json', key="user")
     with col2:
-        if st.button("Student"):
-            switch_page("student_start")
+        st.title("Welcome to MirrorMe!")
+    # st.markdown('''<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">''', unsafe_allow_html=True)
+    container = st.container(border = True)
+    with container:
+        col1, col2, col3 = st.columns([5.2, 5, 5])
+        with col2:
+            st.header("Join As:")
+        col1, col2, col3, col4 = st.columns([1.7,2.5,2.5,2])
+        with col2:
+            if st.button("Teacher", use_container_width=True):
+                switch_page("teacher_start")
+        with col3:
+            if st.button("Student", use_container_width=True):
+                switch_page("student_start")
 
 render_home_page()

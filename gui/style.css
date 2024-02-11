@@ -6,3 +6,28 @@ html, body, [class*="css"] {
     font-weight: 500;
     color: #091747;
 }
+div.st-emotion-cache-uxq398.e1f1d6gn0 {
+    background-color: #f5f5f5;
+    border-radius: 10px;
+    padding-top: 50px !important;
+    padding-bottom: 80px !important;
+    padding: 10px;
+    margin: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+button.st-emotion-cache-3hc2jo.ef3psqc12{
+    height: auto;
+    padding-top: 70px !important;
+    padding-bottom: 70px !important;
+}
+
+input.st-ae.st-bc.st-bd.st-be.st-bf.st-bg.st-bh.st-bi.st-bj.st-bk.st-bl.st-ah.st-bm.st-bn.st-bo.st-bp.st-bq.st-br.st-bs.st-bt.st-ax.st-ay.st-az.st-bu.st-b1.st-b2.st-bb.st-bv.st-bw.st-bx{
+background-color: #f5f5f5;
+}
+
+/* button.st-emotion-cache-3hc2jo.ef3psqc12 {
+    height: auto;
+    padding-top: 30px !important;
+    padding-bottom: 30px !important;
+} */

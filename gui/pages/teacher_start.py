@@ -3,6 +3,7 @@ from streamlit_extras.switch_page_button import switch_page
 from streamlit.runtime.scriptrunner import add_script_run_ctx
 import paho.mqtt.client as mqtt
 import random
+from streamlit_lottie import st_lottie
 import string
 import json
 import threading
@@ -50,20 +51,32 @@ if 'mqtt' not in st.session_state:
 
 
 def render_teacher_start():
-    st.title("Welcome to MirrorMe!")
-    st.header("Create a Room For Your Students!")
-    name = st.text_input(
-        "Enter Your Name: ",
-        placeholder = "Name",
-        # TODO: disable text box once filled in
-    )
+    col1, col2 = st.columns([2, 10])
+    with col1:
+        st_lottie('https://lottie.host/edb12174-1102-4fc5-a7b7-e695bf7b52c2/ui94YFdvMi.json', key="user")
+    with col2:
+        st.title("Welcome to MirrorMe!")
+    container = st.empty()
+    container.header("Create a Room For Your Students!")
+    name = container.text_input(
+            "Enter Your Name: ",
+            placeholder = "Name",
+            # TODO: disable text box once filled in
+        )
     if name:
         st.session_state['teacher_name'] = name
+        container.empty()
         st.header(f"Room Code: {st.session_state['room_code']}")
         st.header("Students Joined:" )
         students = st.empty()
-        exit_button2 = st.button("Exit", key="exit2")
-        start_button = st.button("Start")
+        #TODO: Style a container with the student's names in it once mqtt stuff fixed
+        with open('gui/style.css') as f:    
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+        col1, col2, col3, col4 = st.columns([2.5,1,1,2])
+        with col2:
+            exit_button2 = st.button("Exit", key="exit2")
+        with col3:
+            start_button = st.button("Start")
         while True:
             students.markdown(", ".join(st.session_state['students'].keys()))
             time.sleep(0.1)
@@ -74,7 +87,7 @@ def render_teacher_start():
             if start_button:
                 st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "start"}), qos=1)
                 switch_page("teacher_record")
-    exit_button = st.button("Exit")
+    exit_button = st.button("Exit", use_container_width=True)
     if exit_button:
         st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "exit"}), qos=1)
         st.session_state['mqtt'].disconnect()
