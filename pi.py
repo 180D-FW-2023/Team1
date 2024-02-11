@@ -1,16 +1,24 @@
-from berryIMU import *
+from pi_files.berryIMU import *
 import time
 import math
 import bluetooth
+import RPi.GPIO as GPIO
+
+pin = 23
+GPIO.cleanup()
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(pin, GPIO.OUT)
+GPIO.output(pin, GPIO.HIGH)
+pin_frequency = 20
+
+def set_pin_frequency(freq):
+    pin_frequency = freq
 
 def classify_jump(acc_arr):
     mag = math.sqrt(sum([x**2 for x in acc_arr]))
     if mag < 0.3:
         return True
     return False
-
-
-
 
 def main():
     server_sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
@@ -25,13 +33,11 @@ def main():
     time.sleep(2)
     imu.start()
     while True:
-        # command = "" #TODO: get command
-        # if command == "start":
-        #     imu.start()
-        # elif command == "stop":
-        #     imu.stop()
-        # elif command == "exit":
-        #     break
+        if pin_frequency != 0:
+            time.sleep(1/pin_frequency)
+            GPIO.output(pin, GPIO.LOW)
+            time.sleep(1/pin_frequency)
+            GPIO.output(pin, GPIO.HIGH)
         buf = imu.get_values()
         if len(buf) > 0:
             if classify_jump(buf[-1]) is True:
