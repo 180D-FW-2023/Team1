@@ -6,10 +6,9 @@ import numpy as np
 #import speech_recognition as sr
 import threading
 import movement 
-from model_utils import StickFigureEstimator
+#from model_utils import StickFigureEstimator
 import time
-import bluetooth
-import paho.mqtt.client as mqtt
+#import paho.mqtt.client as mqtt
 #import pyttsx3
 
 
@@ -33,7 +32,7 @@ def on_connect(client,userdata,flags,rc):
 
 
 operating_system = os.environ.get('OS', '')
-client = mqtt.Client()
+#client = mqtt.Client()
 # Initialize webcam
 # cap = cv2.VideoCapture(0)
 # codec = cv2.VideoWriter_fourcc(*'XVID')
@@ -52,7 +51,7 @@ def student_page():
     st.header("Score:")
     client.on_message = on_message
     client.on_connect = on_connect
-    client.connect("172.20.10.6")
+    client.connect("172.20.10.3")
     client.subscribe('movement')
     client.loop_start()
  
@@ -246,7 +245,6 @@ def teacher_page():
 
     cap.release()
     
-
 
 # Initialize session state for page tracking
 if 'current_page' not in st.session_state:

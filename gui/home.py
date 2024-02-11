@@ -1,7 +1,12 @@
 import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
-import bluetooth
 import pandas as pd
+import bluetooth
+
+bs = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+bs.connect(("B8:27:EB:53:C7:86", 1))
+print("Connected")
+
 
 # Change session state based on page
 if st.session_state.get('message', False):
@@ -13,8 +18,6 @@ for key in st.session_state.keys():
         continue
     del st.session_state[key]
 st.session_state['current_page'] = 'home'
-
-    
 
 def render_home_page(blue_sock):
     st.title("Welcome to MirrorMe!")
@@ -51,21 +54,18 @@ def render_home_page(blue_sock):
     print(data)
     
 
-
-
-    
-
-
 def discover_devices():
     return bluetooth.discover_devices(lookup_names=True)
 
 if 'bluetooth_devices' not in st.session_state:
-    st.session_state['bluetooth_devices'] = discover_devices()
+    pass
+    #st.session_state['bluetooth_devices'] = discover_devices()
 
 @st.cache_resource
 def bluetoothsock():
     print("Socket created")
     return bluetooth.BluetoothSocket( bluetooth.RFCOMM )
 
-blue_sock = bluetoothsock()
+#blue_sock = bluetoothsock()
+blue_sock = None
 render_home_page(blue_sock)
