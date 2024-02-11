@@ -13,7 +13,7 @@
 
 
 import time
-import IMU
+import not_final_files.IMU as IMU
 import sys
 
 

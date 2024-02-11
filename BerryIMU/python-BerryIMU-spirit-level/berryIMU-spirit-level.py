@@ -22,7 +22,7 @@
 import smbus, pygame, os
 import time
 import math
-from LSM9DS0 import *
+from pi_files.LSM9DS0 import *
 import datetime
 bus = smbus.SMBus(1)
 

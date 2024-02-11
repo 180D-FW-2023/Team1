@@ -14,7 +14,7 @@
 
 import utime
 import math
-from LSM6DSL import *
+from pi_files.LSM6DSL import *
 import machine
 
 #Comment out one of the below lines

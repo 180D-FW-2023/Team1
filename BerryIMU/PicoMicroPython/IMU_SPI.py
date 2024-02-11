@@ -1,4 +1,4 @@
-from LSM6DSL import *
+from pi_files.LSM6DSL import *
 import machine
 import time
 

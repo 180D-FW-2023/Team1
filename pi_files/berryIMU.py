@@ -17,7 +17,7 @@
 import sys
 import time
 import math
-import IMU
+import pi_files.IMU as IMU
 import datetime
 import os
 import threading
