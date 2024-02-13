@@ -197,8 +197,8 @@ class Movement():
         # SEND JUMP MESSAGE
         # -----------------
         if self.test_path_ptr < len(self.captured_path):
-            if self.captured_path[self.test_path_ptr][POINT_JUMP] == True:
-                self.jump_counter += 24
+            if self.captured_path[self.test_path_ptr][POINT_JUMP] == True or current_points[POINT_JUMP] == True:
+                self.jump_counter = 24
             if self.jump_counter > 0:
                 text_spot = (int(0.45 * frame.shape[1]), int(0.1 * frame.shape[0]))
                 frame = cv2.putText(frame, text='JUMP!', org=text_spot, fontFace=cv2.FONT_HERSHEY_SIMPLEX,  

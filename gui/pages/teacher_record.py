@@ -82,7 +82,7 @@ def render_teacher_record():
             #    new_points[movement.Movement.POINT_JUMP] = True # TODO: get jump bool from IMU
             #else:
             #    new_points[movement.Movement.POINT_JUMP] = False
-            new_points[movement.Movement.POINT_JUMP] = False
+            new_points[POINT_JUMP] = False
             st.session_state['movement'].add_captured_points(new_points)
         elif st.session_state['mode'] == "display":
             mode.markdown("display")
@@ -90,6 +90,7 @@ def render_teacher_record():
                 print("Restarting Movement")
                 st.session_state['movement'].reset()
             new_points = StickFigureEstimator.generate_points(frame)
+            new_points[POINT_JUMP] = False
             frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
         frame_holder.image(frame)
         # Spin loop to get 1/FPS FPS
