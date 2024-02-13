@@ -50,15 +50,24 @@ def render_teacher_record():
     st.title("Record your Movement for your Students!")
     st.header(" ")
     cap = cv2.VideoCapture(0)
-    frame_holder = st.empty()
+    col1, col2 = st.columns([20,3])
+    with col1:
+        frame_holder = st.empty()
+    with col2:
+        st.subheader("Student Scores:" )
+        student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
     fps_counter = st.empty()
-    st.header("Student Scores:" )
-    student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
-    exit_button = st.button("Exit", on_click=exit_on_click)
-    recording_button = st.empty()
-    record = recording_button.button(f'{"Record" if st.session_state["mode"] == "idle" else ("Rerecord" if st.session_state["mode"] == "display" else "Stop")}', on_click=record_on_click)
-    send_button = st.empty()
-    send = send_button.button("Send", disabled=(False if st.session_state['mode'] == "display" else True), on_click=send_on_click)
+    # st.header("Student Scores:" )
+    # student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        exit_button = st.button("Exit", on_click=exit_on_click)
+    with col2:
+        recording_button = st.empty()
+        record = recording_button.button(f'{"Record" if st.session_state["mode"] == "idle" else ("Rerecord" if st.session_state["mode"] == "display" else "Stop")}', on_click=record_on_click)
+    with col3:
+        send_button = st.empty()
+        send = send_button.button("Send", disabled=(False if st.session_state['mode'] == "display" else True), on_click=send_on_click)
     while cap.isOpened():
         # Get loop start time
         loop_start = time.monotonic_ns()
