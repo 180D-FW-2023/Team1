@@ -140,7 +140,7 @@ class Movement():
             self.positions.append(current_points)
 
             
-            
+
             for k in (POINT_LEFT_SHOULDER, POINT_RIGHT_SHOULDER):
                 i = 0
                 while self.positions[i][k] is None:
@@ -157,18 +157,7 @@ class Movement():
                     smoothed_data = (st_x, st_y)
                     i += 1
                 current_points[k] = smoothed_data
-            '''
-            for k in range(17):
-                sum = (0, 0)
-                count = 0
-                for i in range(max(0, len(self.positions) - 5), len(self.positions), 1):
-                    if self.positions[i][k] is not None:
-                        sum = (sum[0] + self.positions[i][k][0], sum[1] + self.positions[i][k][1])
-                        count += 1 
-                
-                if count > 2:
-                    current_points[k] = (sum[0] / count, sum[1] / count)
-            '''
+
 
             captured_width = StickFigureEstimator.get_width(captured_points)
 

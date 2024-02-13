@@ -105,6 +105,7 @@ class StickFigureEstimator():
         # Calculate the score for distances between buffer and max distance
         # Linearly scale the score from 100 at buffer_distance to 0 at max_distance
         score = 100 * ((1 - (distance - buffer_distance) / (max_distance - buffer_distance)) ** 2)
+        score = math.floor(score*100)/100
         return score
 
     def overlay_points(image, points, scale_factor=1):
