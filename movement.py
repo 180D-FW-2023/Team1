@@ -10,7 +10,7 @@ class Movement():
     CIRCLE_BASE_RADIUS = 25
     MAX_BUFFER_SIZE = 40
 
-    RED = (0, 0, 255)
+    RED = (255, 0, 0)
     STICK_FIGURE_THICKNESS = 5
 
 
@@ -116,7 +116,7 @@ class Movement():
                 # Convert from relative to absolute
                 x, y = int(coords[0] * frame.shape[1]), int(coords[1] * frame.shape[0])
                 # Display
-                cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(255, min(i*2, 255), min(i*2, 255)), thickness=-1)
+                cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(min(i*2, 255), min(i*2, 255), 255), thickness=-1)
         # -----------------
         # DRAW STICK FIGURE
         # -----------------
@@ -197,8 +197,8 @@ class Movement():
         # SEND JUMP MESSAGE
         # -----------------
         if self.test_path_ptr < len(self.captured_path):
-            if self.captured_path[self.test_path_ptr][POINT_JUMP] == True:
-                self.jump_counter += 24
+            if self.captured_path[self.test_path_ptr][POINT_JUMP] == True or current_points[POINT_JUMP] == True:
+                self.jump_counter = 24
             if self.jump_counter > 0:
                 text_spot = (int(0.45 * frame.shape[1]), int(0.1 * frame.shape[0]))
                 frame = cv2.putText(frame, text='JUMP!', org=text_spot, fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
@@ -211,6 +211,9 @@ class Movement():
 
     def get_score(self):
         return str(self.score/self.score_counter)
+    
+    def get_current_score(self):
+        return self.current_score
 
     def reset(self):
         self.test_path_ptr = 0

@@ -54,12 +54,23 @@ def render_student_perform():
         # Modify frame for viewing (flip, color, scaling)
         frame = cv2.flip(frame, 1)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
+        #frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
         
         if st.session_state['mode'] == "waiting":
             message.header("Waiting for Teacher to Send Movement.")
+            try:
+                data = st.session_state['bluetooth_sock'].recv(1024)
+            except OSError:
+                data = ""
+            
+            
        
         elif st.session_state['mode'] == "idle":
+            try:
+                data = st.session_state['bluetooth_sock'].recv(1024)
+            except OSError:
+                data = ""
+            print("JUMP DATA", data)
             st.session_state['movement'].reset()
             if st.session_state['score'] is None:
                 message.header("Got a new movement from Teacher. Press Start to perform.")
@@ -68,12 +79,20 @@ def render_student_perform():
       
         elif st.session_state['mode'] == "performing":
             message.header("Performing movement. Press Stop to Cancel.")
+            try:
+                data = st.session_state['bluetooth_sock'].recv(1024)
+            except OSError:
+                data = ""
+            print("JUMP DATA", data)
             if not st.session_state['movement'].is_done():
                 new_points = StickFigureEstimator.generate_points(frame)
+                new_points[POINT_JUMP] = False if data == "" else True
                 frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
                 score = st.session_state['movement'].get_score()
+                st.session_state['bluetooth_sock'].send(str(st.session_state['movement'].get_current_score()))
                 st.session_state['score'] = score
             else:
+                st.session_state['bluetooth_sock'].send(str(100))
                 score = st.session_state['movement'].get_score()
                 st.session_state['mqtt'].publish(f'mirrorme/student_{st.session_state["room_code"]}', json.dumps({"command": "score", "name": st.session_state['name'], "score": score}), qos=1)
                 st.session_state['mode'] = "idle"
