@@ -52,7 +52,6 @@ def render_teacher_record():
     cap = cv2.VideoCapture(0)
     frame_holder = st.empty()
     fps_counter = st.empty()
-    mode = st.empty()
     st.header("Student Scores:" )
     student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
     exit_button = st.button("Exit", on_click=exit_on_click)
@@ -74,9 +73,8 @@ def render_teacher_record():
 
         # Idle mode
         if st.session_state['mode'] == "idle":
-            mode.markdown("idle")
+            pass
         elif st.session_state['mode'] == "record":
-            mode.markdown("record")
             new_points = StickFigureEstimator.generate_points(frame)
             #if data != None:
             #    new_points[movement.Movement.POINT_JUMP] = True # TODO: get jump bool from IMU
@@ -85,7 +83,6 @@ def render_teacher_record():
             new_points[POINT_JUMP] = False
             st.session_state['movement'].add_captured_points(new_points)
         elif st.session_state['mode'] == "display":
-            mode.markdown("display")
             if st.session_state['movement'].is_done():
                 print("Restarting Movement")
                 st.session_state['movement'].reset()

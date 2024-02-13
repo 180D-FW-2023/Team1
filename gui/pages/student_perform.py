@@ -70,6 +70,7 @@ def render_student_perform():
             message.header("Performing movement. Press Stop to Cancel.")
             if not st.session_state['movement'].is_done():
                 new_points = StickFigureEstimator.generate_points(frame)
+                new_points[POINT_JUMP] = False
                 frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
                 score = st.session_state['movement'].get_score()
                 st.session_state['score'] = score
