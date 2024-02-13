@@ -163,14 +163,26 @@ class Movement():
 
             current_center = StickFigureEstimator.get_center(current_points)
             current_width = StickFigureEstimator.get_width(current_points)
-
+            score_1, score_2 = None, None
             if current_center and current_width and captured_width:
                 scale_factor = current_width / captured_width
                 captured_points = StickFigureEstimator.scale_points(captured_points, current_center, scale_factor)
-            if captured_points[9] and current_points[9]:
-                score = StickFigureEstimator.score(captured_points[9], current_points[9])
-                self.current_score = score
-                self.score += score
+            if captured_points[POINT_RIGHT_WRIST] and current_points[POINT_RIGHT_WRIST]:
+                score_1 = StickFigureEstimator.score(captured_points[POINT_RIGHT_WRIST], current_points[POINT_RIGHT_WRIST])
+            if captured_points[POINT_LEFT_WRIST] and current_points[POINT_LEFT_WRIST]:
+                score_2 = StickFigureEstimator.score(captured_points[POINT_LEFT_WRIST], current_points[POINT_LEFT_WRIST])
+              
+            if score_1 and score_2: 
+                self.current_score = (score_1 + score_2) / 2
+                self.score += (score_1 + score_2) / 2
+                self.score_counter += 1
+            elif score_1:
+                self.current_score = score_1
+                self.score += score_1
+                self.score_counter += 1
+            elif score_2:
+                self.current_score = score_2
+                self.score += score_2
                 self.score_counter += 1
             
             frame = cv2.putText(frame, text=str(self.score/self.score_counter), org=(100, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
