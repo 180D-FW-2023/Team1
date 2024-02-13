@@ -10,7 +10,8 @@ class Movement():
     CIRCLE_BASE_RADIUS = 25
     MAX_BUFFER_SIZE = 40
 
-    RED = (0, 0, 255)
+    RED = (255, 0, 0)
+
     STICK_FIGURE_THICKNESS = 5
 
 
@@ -116,7 +117,7 @@ class Movement():
                 # Convert from relative to absolute
                 x, y = int(coords[0] * frame.shape[1]), int(coords[1] * frame.shape[0])
                 # Display
-                cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(255, min(i*2, 255), min(i*2, 255)), thickness=-1)
+                cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(min(i*2, 255), min(i*2, 255), 255), thickness=-1)
         # -----------------
         # DRAW STICK FIGURE
         # -----------------

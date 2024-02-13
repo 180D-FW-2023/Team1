@@ -13,8 +13,6 @@ with open('gui/style.css') as f:
     st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 def render_home_page():
-    st.title("Welcome to MirrorMe!")
-    st.header("Join As:")
     col1, col2 = st.columns([2, 10])
     with col1:
         st_lottie('https://lottie.host/edb12174-1102-4fc5-a7b7-e695bf7b52c2/ui94YFdvMi.json', key="user")

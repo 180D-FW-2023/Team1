@@ -55,10 +55,8 @@ while(True):
             s = mov.get_movement_json()
             mov.reset()
             mov = movement.Movement(s)
-            
+        new_points[POINT_JUMP] = False
         current_points = StickFigureEstimator.generate_points(frame)
-        current_points[POINT_JUMP] = False
-
         frame = mov.display_and_advance_frame(frame, current_points)
 
     # Display frame
