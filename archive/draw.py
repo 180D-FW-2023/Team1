@@ -27,7 +27,7 @@ while(True):
     frame = cv2.flip(frame, 1)
 
     # For testing, after 10 seconds, set to display mode
-    if record_mode and time.monotonic_ns() > time_start + (5*1_000_000_000):
+    if record_mode and time.monotonic_ns() > time_start + (10*1_000_000_000):
         record_mode = False
         print("Entering display mode")
 
@@ -55,6 +55,7 @@ while(True):
             s = mov.get_movement_json()
             mov.reset()
             mov = movement.Movement(s)
+        new_points[POINT_JUMP] = False
         current_points = StickFigureEstimator.generate_points(frame)
         frame = mov.display_and_advance_frame(frame, current_points)
 
@@ -72,3 +73,4 @@ while(True):
 # When everything done, release the capture
 cap.release()
 cv2.destroyAllWindows()
+

@@ -1,0 +1,6 @@
+streamlit==1.28.2
+streamlit-extras
+streamlit-lottie
+paho-mqtt==1.6.1
+opencv-python
+tensorflow-hub==0.15.0

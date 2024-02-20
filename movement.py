@@ -10,7 +10,8 @@ class Movement():
     CIRCLE_BASE_RADIUS = 25
     MAX_BUFFER_SIZE = 40
 
-    RED = (0, 0, 255)
+    RED = (255, 0, 0)
+
     STICK_FIGURE_THICKNESS = 5
 
 
@@ -116,7 +117,7 @@ class Movement():
                 # Convert from relative to absolute
                 x, y = int(coords[0] * frame.shape[1]), int(coords[1] * frame.shape[0])
                 # Display
-                cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(255, min(i*2, 255), min(i*2, 255)), thickness=-1)
+                cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(min(i*2, 255), min(i*2, 255), 255), thickness=-1)
         # -----------------
         # DRAW STICK FIGURE
         # -----------------
@@ -140,7 +141,7 @@ class Movement():
             self.positions.append(current_points)
 
             
-            
+
             for k in (POINT_LEFT_SHOULDER, POINT_RIGHT_SHOULDER):
                 i = 0
                 while self.positions[i][k] is None:
@@ -157,31 +158,32 @@ class Movement():
                     smoothed_data = (st_x, st_y)
                     i += 1
                 current_points[k] = smoothed_data
-            '''
-            for k in range(17):
-                sum = (0, 0)
-                count = 0
-                for i in range(max(0, len(self.positions) - 5), len(self.positions), 1):
-                    if self.positions[i][k] is not None:
-                        sum = (sum[0] + self.positions[i][k][0], sum[1] + self.positions[i][k][1])
-                        count += 1 
-                
-                if count > 2:
-                    current_points[k] = (sum[0] / count, sum[1] / count)
-            '''
+
 
             captured_width = StickFigureEstimator.get_width(captured_points)
 
             current_center = StickFigureEstimator.get_center(current_points)
             current_width = StickFigureEstimator.get_width(current_points)
-
+            score_1, score_2 = None, None
             if current_center and current_width and captured_width:
                 scale_factor = current_width / captured_width
                 captured_points = StickFigureEstimator.scale_points(captured_points, current_center, scale_factor)
-            if captured_points[9] and current_points[9]:
-                score = StickFigureEstimator.score(captured_points[9], current_points[9])
-                self.current_score = score
-                self.score += score
+            if captured_points[POINT_RIGHT_WRIST] and current_points[POINT_RIGHT_WRIST]:
+                score_1 = StickFigureEstimator.score(captured_points[POINT_RIGHT_WRIST], current_points[POINT_RIGHT_WRIST])
+            if captured_points[POINT_LEFT_WRIST] and current_points[POINT_LEFT_WRIST]:
+                score_2 = StickFigureEstimator.score(captured_points[POINT_LEFT_WRIST], current_points[POINT_LEFT_WRIST])
+              
+            if score_1 and score_2: 
+                self.current_score = (score_1 + score_2) / 2
+                self.score += (score_1 + score_2) / 2
+                self.score_counter += 1
+            elif score_1:
+                self.current_score = score_1
+                self.score += score_1
+                self.score_counter += 1
+            elif score_2:
+                self.current_score = score_2
+                self.score += score_2
                 self.score_counter += 1
             
             frame = cv2.putText(frame, text=str(self.score/self.score_counter), org=(100, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
