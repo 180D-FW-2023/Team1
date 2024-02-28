@@ -47,7 +47,7 @@ class StickFigureEstimator():
 
         for i, (y, x, score) in enumerate(keypoints_with_scores[0][0]):
             # print(x, y)
-            if score > 0.4:
+            if score > 0.5:
                 points[i] = (x, y)
             else:
                 points[i] = None
