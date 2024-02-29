@@ -1,7 +1,5 @@
 import numpy as np
 import cv2
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
 import threading
 import time
 from model_utils import *
@@ -57,6 +55,7 @@ while(True):
             mov = movement.Movement(s)
         new_points[POINT_JUMP] = False
         current_points = StickFigureEstimator.generate_points(frame)
+        current_points[POINT_JUMP] = False
         frame = mov.display_and_advance_frame(frame, current_points)
 
     # Display frame
