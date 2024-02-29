@@ -2,6 +2,7 @@ import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 from streamlit_lottie import st_lottie
 import pandas as pd
+import socket
 
 # Change session state based on page
 if st.session_state.get('message', False):
@@ -18,6 +19,19 @@ def render_home_page():
         st_lottie('https://lottie.host/edb12174-1102-4fc5-a7b7-e695bf7b52c2/ui94YFdvMi.json', key="user")
     with col2:
         st.title("Welcome to MirrorMe!")
+    
+    ref_btN = st.button("Connect")
+    if ref_btN:
+        print("Connecting")
+        st.session_state["bluetooth_sock"].connect(("B8:27:EB:53:C7:86",1))
+        st.session_state["bluetooth_sock"].settimeout(0)
+        print("Connected")
+
+    try:
+        data = st.session_state["bluetooth_sock"].recv(1024)
+    except OSError:
+        data = ""
+    print(data)
     # st.markdown('''<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">''', unsafe_allow_html=True)
     container = st.container()
     with container:
@@ -31,5 +45,8 @@ def render_home_page():
         with col3:
             if st.button("Student", use_container_width=True):
                 switch_page("student_start")
+
+if 'bluetooth_sock' not in st.session_state:
+    st.session_state['bluetooth_sock'] = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM,socket.BTPROTO_RFCOMM)
 
 render_home_page()
