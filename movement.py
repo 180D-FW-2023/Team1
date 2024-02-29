@@ -204,8 +204,7 @@ class Movement():
                     self.score += score_2
                     self.score_counter += 1
                 
-                frame = cv2.putText(frame, text=str(self.score/self.score_counter), org=(100, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
-                    fontScale=3, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
+            
                 for (pointa, pointb) in self.__get_stick_figure_lines(captured_points).values():
                     if pointa and pointb:
                         # Convert from relative to absolute
@@ -213,6 +212,10 @@ class Movement():
                         pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
                         # Display
                         frame = cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+        
+        # Draw score on frame
+        frame = cv2.putText(frame, text=str(int(self.score/self.score_counter * 100)/100.0), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
+                fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
         # -----------------
         # SEND JUMP MESSAGE
         # -----------------
