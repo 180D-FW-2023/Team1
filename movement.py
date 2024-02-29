@@ -37,20 +37,23 @@ class Movement():
                             v = (np.float32(v[0]), np.float32(v[1]))
                     new_points[int(k)] = v
                 self.captured_path.append(new_points)
+                
+                            
             # smoothing captured_path
             count = {x: 0 for x in range(17)}
             for points in self.captured_path:
                 for i in range(17):
                     if points[i] is not None:
                         count[i] += 1
+            
+            
             for points in self.captured_path:
                 for i in range(17):
                     if count[i] < 5:
                         points[i] = None
                         
                         
-        self.active_points_right = []
-        self.active_points_left = []
+        self.active_points = []
 
     def get_movement_json(self):
         # Encode into json
@@ -92,83 +95,45 @@ class Movement():
         # ------------------
         # If the buffer is not max size
         if self.test_path_ptr < len(self.captured_path):
-            self.active_points_right.append(self.captured_path[self.test_path_ptr][POINT_RIGHT_WRIST])
-            self.active_points_left.append(self.captured_path[self.test_path_ptr][POINT_LEFT_WRIST])
+            self.active_points.append(self.captured_path[self.test_path_ptr][POINT_RIGHT_WRIST])
             self.test_path_ptr += 1
         # If buffer is over max size, pop oldest coordinate
-        if len(self.active_points_right) > Movement.MAX_BUFFER_SIZE:
-            self.active_points_right.pop(0)
-            self.active_points_left.pop(0)
+        if len(self.active_points) > Movement.MAX_BUFFER_SIZE:
+            self.active_points.pop(0)
 
         # Smooth movement with 5 points in between each, and replace None with an average of the two nearest
         smooth_factor = 5
-        smoothed_movement_right = []
-        smoothed_movement_left = []
-        if len(self.active_points_right) > 0:
-            smoothed_movement_right.append(self.active_points_right[0])
-        if len(self.active_points_left) > 0:
-            smoothed_movement_left.append(self.active_points_left[0])
-
-        # Smooth right
-        for i, coords in enumerate(self.active_points_right):
+        smoothed_movement = []
+        if len(self.active_points) > 0:
+            smoothed_movement.append(self.active_points[0])
+        for i, coords in enumerate(self.active_points):
             # Do nothing if curr point is None
             if coords is None:
                 continue
             # Add next points
-            if i == len(self.active_points_right) - 1:
-                smoothed_movement_right.append(self.active_points_right[i])
+            if i == len(self.active_points) - 1:
+                smoothed_movement.append(self.active_points[i])
                 break
             thisx, thisy = coords
             j = i + 1
-            while j < len(self.active_points_right):
-                if self.active_points_right[j] is not None:
-                    nextx, nexty = self.active_points_right[j]
+            while j < len(self.active_points):
+                if self.active_points[j] is not None:
+                    nextx, nexty = self.active_points[j]
                     break
                 else:
                     j += 1
             else:
                 break
             for dx, dy in zip(np.linspace(thisx, nextx, smooth_factor), np.linspace(thisy, nexty, smooth_factor)):
-                smoothed_movement_right.append((dx, dy))
+                smoothed_movement.append((dx, dy))
 
-        # Smooth left
-        for i, coords in enumerate(self.active_points_left):
-            # Do nothing if curr point is None
-            if coords is None:
-                continue
-            # Add next points
-            if i == len(self.active_points_left) - 1:
-                smoothed_movement_left.append(self.active_points_left[i])
-                break
-            thisx, thisy = coords
-            j = i + 1
-            while j < len(self.active_points_left):
-                if self.active_points_left[j] is not None:
-                    nextx, nexty = self.active_points_left[j]
-                    break
-                else:
-                    j += 1
-            else:
-                break
-            for dx, dy in zip(np.linspace(thisx, nextx, smooth_factor), np.linspace(thisy, nexty, smooth_factor)):
-                smoothed_movement_left.append((dx, dy))
-
-        # Display smoothed movement right
-        for coords, i in zip(smoothed_movement_right, range(len(smoothed_movement_right), -1, -1)):
+        # Display smoothed movement
+        for coords, i in zip(smoothed_movement, range(len(smoothed_movement), -1, -1)):
             if coords is not None:
                 # Convert from relative to absolute
                 x, y = int(coords[0] * frame.shape[1]), int(coords[1] * frame.shape[0])
                 # Display
                 cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(min(i*2, 255), min(i*2, 255), 255), thickness=-1)
-       
-        for coords, i in zip(smoothed_movement_left, range(len(smoothed_movement_left), -1, -1)):
-            if coords is not None:
-                # Convert from relative to absolute
-                x, y = int(coords[0] * frame.shape[1]), int(coords[1] * frame.shape[0])
-                # Display
-                cv2.circle(frame, center=(x,y), radius=max(Movement.CIRCLE_BASE_RADIUS-i//10, 1), color=(min(i*2, 255), min(i*2, 255), 255), thickness=-1)
-       
-       
         # -----------------
         # DRAW STICK FIGURE
         # -----------------
@@ -272,7 +237,7 @@ class Movement():
 
     def reset(self):
         self.test_path_ptr = 0
-        self.active_points_right = []
+        self.active_points = []
         self.jump_counter = 0
         self.score = 0
         self.score_counter = 1
