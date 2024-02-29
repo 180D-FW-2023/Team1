@@ -214,7 +214,7 @@ class Movement():
                         frame = cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
         
         # Draw score on frame
-        frame = cv2.putText(frame, text=str(int(self.score/self.score_counter * 100)/100.0), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
+        frame = cv2.putText(frame, text=self.get_score(), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
                 fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
         # -----------------
         # SEND JUMP MESSAGE
@@ -233,7 +233,7 @@ class Movement():
         return self.test_path_ptr >= len(self.captured_path)
 
     def get_score(self):
-        return str(self.score/self.score_counter)
+        return str(int(self.score/self.score_counter * 100)/100.0)
 
     def reset(self):
         self.test_path_ptr = 0
