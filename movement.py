@@ -44,8 +44,6 @@ class Movement():
                     if points[i] is not None:
                         count[i] += 1
             
-            print(count)
-            quit()
             
             for points in self.captured_path:
                 for i in range(17):

@@ -1,8 +1,4 @@
-import numpy as np
 import cv2
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-import threading
 import time
 from model_utils import *
 import movement
