@@ -71,7 +71,7 @@ class Movement():
         points = dict(points)
         self.captured_path.append(points)
 
-    def __get_stick_figure_lines(self, points):
+    def __get_stick_figure_lines(points):
         hip_midpoint = None if (points[POINT_RIGHT_HIP] == None or points[POINT_LEFT_HIP] == None) \
                     else (((points[POINT_RIGHT_HIP][0] +  points[POINT_LEFT_HIP][0]) / 2), ((points[POINT_RIGHT_HIP][1] +  points[POINT_LEFT_HIP][1]) / 2))
         res = {
@@ -156,7 +156,6 @@ class Movement():
             
             self.history.append(current_points)
 
-            
 
             for k in (POINT_LEFT_SHOULDER, POINT_RIGHT_SHOULDER):
                 i = 0
@@ -205,7 +204,7 @@ class Movement():
                     self.score_counter += 1
                 
             
-                for (pointa, pointb) in self.__get_stick_figure_lines(captured_points).values():
+                for (pointa, pointb) in Movement.__get_stick_figure_lines(captured_points).values():
                     if pointa and pointb:
                         # Convert from relative to absolute
                         pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
@@ -234,6 +233,16 @@ class Movement():
 
     def get_score(self):
         return str(int(self.score/self.score_counter * 100)/100.0)
+    
+    def draw_stick_figure_simple(frame, points):
+        for (pointa, pointb) in Movement.__get_stick_figure_lines(points).values():
+            if pointa and pointb:
+                # Convert from relative to absolute
+                pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
+                pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
+                # Display
+                frame = cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+        return frame
 
     def reset(self):
         self.test_path_ptr = 0

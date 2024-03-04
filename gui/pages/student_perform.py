@@ -38,6 +38,7 @@ def start_stop_on_click():
 def render_student_perform():
     st.session_state['mqtt'].on_message = on_recv
     message = st.empty()
+    st.markdown("Make sure your whole body is visible in the frame.")
     frame_holder = st.empty()
     fps_counter = st.empty()
     exit_button = st.button("Exit")
@@ -56,21 +57,22 @@ def render_student_perform():
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
         
+
+        new_points = StickFigureEstimator.generate_points(frame)
+        new_points[POINT_JUMP] = False # TODO: get jump bool from IMU
         if st.session_state['mode'] == "waiting":
             message.header("Waiting for Teacher to Send Movement.")
-       
+            frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
         elif st.session_state['mode'] == "idle":
             st.session_state['movement'].reset()
             if st.session_state['score'] is None:
                 message.header("Got a new movement from Teacher. Press Start to perform.")
             else:
                 message.header(f"You got a score of {st.session_state['score']}!. Press Start to try again!")
-      
+            frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
         elif st.session_state['mode'] == "performing":
             message.header("Performing movement. Press Stop to Cancel.")
             if not st.session_state['movement'].is_done():
-                new_points = StickFigureEstimator.generate_points(frame)
-                new_points[POINT_JUMP] = False
                 frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
                 score = st.session_state['movement'].get_score()
                 st.session_state['score'] = score
@@ -84,7 +86,7 @@ def render_student_perform():
         while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):
             pass
         # Update FPS counter
-        fps_counter.markdown(f"FPS: {str(1_000_000_000.0 / (time.monotonic_ns() - loop_start))}")
+        fps_counter.markdown(f"FPS: {str(int(100_000_000_000.0 / (time.monotonic_ns() - loop_start))/100.0)}")
         # Handle Buttons
         if exit_button or not st.session_state.get('valid_room', False):
             cap.release()

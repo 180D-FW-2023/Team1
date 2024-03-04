@@ -49,6 +49,7 @@ def render_teacher_record():
     st.session_state['mqtt'].on_message = on_recv
     st.title("Record your Movement for your Students!")
     st.header(" ")
+    st.markdown("Make sure your whole body is visible in the frame.")
     cap = cv2.VideoCapture(0)
     col1, col2 = st.columns([20,3])
     with col1:
@@ -80,30 +81,25 @@ def render_teacher_record():
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
 
+        new_points = StickFigureEstimator.generate_points(frame)
+        new_points[POINT_JUMP] = False # TODO: get jump bool from IMU
         # Idle mode
         if st.session_state['mode'] == "idle":
-            pass
+            frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
         elif st.session_state['mode'] == "record":
-            new_points = StickFigureEstimator.generate_points(frame)
-            #if data != None:
-            #    new_points[movement.Movement.POINT_JUMP] = True # TODO: get jump bool from IMU
-            #else:
-            #    new_points[movement.Movement.POINT_JUMP] = False
-            new_points[POINT_JUMP] = False
+            frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
             st.session_state['movement'].add_captured_points(new_points)
         elif st.session_state['mode'] == "display":
             if st.session_state['movement'].is_done():
                 print("Restarting Movement")
                 st.session_state['movement'].reset()
-            new_points = StickFigureEstimator.generate_points(frame)
-            new_points[POINT_JUMP] = False
             frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
         frame_holder.image(frame)
         # Spin loop to get 1/FPS FPS
         while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):
             pass
         # Update FPS Counter
-        fps_counter.markdown(f"FPS: {str(1_000_000_000.0 / (time.monotonic_ns() - loop_start))}")
+        fps_counter.markdown(f"FPS: {str(int(100_000_000_000.0 / (time.monotonic_ns() - loop_start))/100.0)}")
         student_scores.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
         if exit_button:
             cap.release()
