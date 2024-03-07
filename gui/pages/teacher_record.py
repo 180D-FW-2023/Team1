@@ -4,6 +4,7 @@ import cv2
 import time
 import movement
 import json
+import threading
 from model_utils import *
 
 # Change session state based on page
@@ -15,9 +16,13 @@ if 'mode' not in st.session_state:
 if 'movement' not in st.session_state:
     st.session_state['movement'] = movement.Movement()
 
+if 'jump_buffer' not in st.session_state:
+    st.session_state['jump_buffer'] = False
+    st.session_state['jump_mutex'] = threading.Lock()
+
 FPS = 30
 
-def on_recv(client, userdata, message):
+def mirrorme_on_recv(client, userdata, message):
     print("Teacher got message")
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg or 'name' not in msg:
@@ -26,6 +31,23 @@ def on_recv(client, userdata, message):
         del st.session_state['students'][msg['name']]
     elif msg['command'] == 'score':
         st.session_state['students'].update({msg['name']: msg['score']})
+
+def mirrormodule_on_recv(client, userdata, message):
+    print("Got message from MirrorModule")
+    msg = json.loads(message.payload.decode("utf-8"))
+    if 'command' not in msg:
+        return
+    if msg['command'] == 'record':
+        if st.session_state['mode'] == "idle" or st.session_state['mode'] == "display":
+            print("switching to record mode")
+            st.session_state['mode'] = "record"
+            st.session_state['movement'] = movement.Movement()
+        elif st.session_state['mode'] == "record":
+            print("switching to display mode")
+            st.session_state['mode'] = "display"
+    elif msg['command'] == 'jump':
+        with st.session_state['jump_mutex']:
+            st.session_state['jump_buffer'] = True
 
 def record_on_click():
     if st.session_state['mode'] == "idle" or st.session_state['mode'] == "display":
@@ -46,7 +68,9 @@ def exit_on_click():
     st.session_state['mqtt'].disconnect()
 
 def render_teacher_record():
-    st.session_state['mqtt'].on_message = on_recv
+    st.session_state['mqtt'].on_message = mirrorme_on_recv
+    if st.session_state.get("mirrormodule_name", None) is not None:
+        st.session_state['mirrormodule_mqtt'].on_message = mirrormodule_on_recv
     st.title("Record your Movement for your Students!")
     st.header(" ")
     st.markdown("Make sure your whole body is visible in the frame.")
@@ -58,8 +82,6 @@ def render_teacher_record():
         st.subheader("Student Scores:" )
         student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
     fps_counter = st.empty()
-    # st.header("Student Scores:" )
-    # student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
     col1, col2, col3 = st.columns(3)
     with col1:
         exit_button = st.button("Exit", on_click=exit_on_click)
@@ -82,7 +104,12 @@ def render_teacher_record():
         frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
 
         new_points = StickFigureEstimator.generate_points(frame)
-        new_points[POINT_JUMP] = False # TODO: get jump bool from IMU
+        new_points[POINT_JUMP] = False
+        with st.session_state['jump_mutex']:
+            if st.session_state['jump_buffer']:
+                new_points[POINT_JUMP] = True
+                st.session_state['jump_buffer'] = False
+
         # Idle mode
         if st.session_state['mode'] == "idle":
             frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
@@ -94,6 +121,10 @@ def render_teacher_record():
                 print("Restarting Movement")
                 st.session_state['movement'].reset()
             frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
+            curr_score = st.session_state['movement'].get_current_score()
+            if st.session_state['mirrormodule_name'] is not None:
+                st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
+                                json.dumps({"command": "score", "score": curr_score}), qos=1)
         frame_holder.image(frame)
         # Spin loop to get 1/FPS FPS
         while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):

@@ -85,7 +85,7 @@ class StickFigureEstimator():
         center = StickFigureEstimator.get_center(points)
         if center:
             for key in points:
-                if points[key]:
+                if points[key] and key != POINT_JUMP:
                     points[key] = ((points[key][0] - center[0]) * scale_factor + new_center[0], (points[key][1] - center[1]) * scale_factor + new_center[1])
         return points
 

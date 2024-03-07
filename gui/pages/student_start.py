@@ -15,7 +15,7 @@ if 'teacher_started' not in st.session_state:
 if 'valid_room' not in st.session_state:
     st.session_state['valid_room'] = False
 
-def on_recv(client, userdata, message):
+def mirrorme_on_recv(client, userdata, message):
     print("Student Got Message")
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg:
@@ -32,7 +32,7 @@ if 'mqtt' not in st.session_state:
     mqtt_client = mqtt.Client()
     # TODO: For error reasons, assert that connection was actually made.
     #           Give a fault if it was not.
-    mqtt_client.on_message = on_recv
+    mqtt_client.on_message = mirrorme_on_recv
     mqtt_client.connect_async('test.mosquitto.org')
     def thread_looper(client):
         client.loop_forever()

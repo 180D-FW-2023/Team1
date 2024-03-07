@@ -4,6 +4,7 @@ import cv2
 import time
 import json
 import movement
+import threading
 from model_utils import *
 
 # Change session state based on page
@@ -16,7 +17,11 @@ if 'mode' not in st.session_state:
 if 'score' not in st.session_state:
     st.session_state['score'] = None
 
-def on_recv(client, userdata, message):
+if 'jump_buffer' not in st.session_state:
+    st.session_state['jump_buffer'] = False
+    st.session_state['jump_mutex'] = threading.Lock()
+
+def mirrorme_on_recv(client, userdata, message):
     print("Student got message")
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg:
@@ -29,6 +34,21 @@ def on_recv(client, userdata, message):
         mov = msg['mov']
         st.session_state['movement'] = movement.Movement(mov)
 
+def mirrormodule_on_recv(client, userdata, message):
+    print("Got message from MirrorModule")
+    msg = json.loads(message.payload.decode("utf-8"))
+    if 'command' not in msg:
+        return
+    if msg['command'] == 'record':
+        if st.session_state['mode'] == "idle":
+            st.session_state['mode'] = "performing"
+        elif st.session_state['mode'] == "performing":
+            st.session_state['mode'] = "idle"
+    elif msg['command'] == 'jump':
+        if st.session_state['mode'] == "performing":
+            with st.session_state['jump_mutex']:
+                st.session_state['jump_buffer'] = True
+
 def start_stop_on_click():
     if st.session_state['mode'] == "idle":
         st.session_state['mode'] = "performing"
@@ -36,7 +56,9 @@ def start_stop_on_click():
         st.session_state['mode'] = "idle"
 
 def render_student_perform():
-    st.session_state['mqtt'].on_message = on_recv
+    st.session_state['mqtt'].on_message = mirrorme_on_recv
+    if st.session_state.get("mirrormodule_name", None) is not None:
+        st.session_state['mirrormodule_mqtt'].on_message = mirrormodule_on_recv
     message = st.empty()
     st.markdown("Make sure your whole body is visible in the frame.")
     frame_holder = st.empty()
@@ -56,13 +78,19 @@ def render_student_perform():
         frame = cv2.flip(frame, 1)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, (frame.shape[1]//2, frame.shape[0]//2))
-        
-
         new_points = StickFigureEstimator.generate_points(frame)
-        new_points[POINT_JUMP] = False # TODO: get jump bool from IMU
+        new_points[POINT_JUMP] = False 
+        with st.session_state['jump_mutex']:
+            if st.session_state['jump_buffer']:
+                new_points[POINT_JUMP] = True
+                st.session_state['jump_buffer'] = False
+        
+        # Waiting for a movement mode
         if st.session_state['mode'] == "waiting":
             message.header("Waiting for Teacher to Send Movement.")
             frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
+        
+        # Waiting to start performing mode
         elif st.session_state['mode'] == "idle":
             st.session_state['movement'].reset()
             if st.session_state['score'] is None:
@@ -70,11 +98,17 @@ def render_student_perform():
             else:
                 message.header(f"You got a score of {st.session_state['score']}!. Press Start to try again!")
             frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
+       
+        # Performing movement mode
         elif st.session_state['mode'] == "performing":
             message.header("Performing movement. Press Stop to Cancel.")
             if not st.session_state['movement'].is_done():
                 frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
                 score = st.session_state['movement'].get_score()
+                curr_score = st.session_state['movement'].get_current_score()
+                if st.session_state['mirrormodule_name'] is not None:
+                    st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
+                                    json.dumps({"command": "score", "score": curr_score}), qos=1)
                 st.session_state['score'] = score
             else:
                 score = st.session_state['movement'].get_score()
@@ -82,11 +116,14 @@ def render_student_perform():
                 st.session_state['mode'] = "idle"
         
         frame_holder.image(frame)
+
         # Spin loop to get 1/FPS FPS
         while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):
             pass
+        
         # Update FPS counter
         fps_counter.markdown(f"FPS: {str(int(100_000_000_000.0 / (time.monotonic_ns() - loop_start))/100.0)}")
+        
         # Handle Buttons
         if exit_button or not st.session_state.get('valid_room', False):
             cap.release()

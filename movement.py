@@ -234,6 +234,9 @@ class Movement():
     def get_score(self):
         return str(int(self.score/self.score_counter * 100)/100.0)
     
+    def get_current_score(self):
+        return self.current_score
+    
     def draw_stick_figure_simple(frame, points):
         for (pointa, pointb) in Movement.__get_stick_figure_lines(points).values():
             if pointa and pointb:
