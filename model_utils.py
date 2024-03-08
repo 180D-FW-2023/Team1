@@ -35,7 +35,7 @@ class StickFigureEstimator():
 
 
     def generate_points(image):
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = tf.expand_dims(image, axis=0)
         resized_image = tf.image.resize(
             image, (StickFigureEstimator.input_size, StickFigureEstimator.input_size))
@@ -85,7 +85,7 @@ class StickFigureEstimator():
         center = StickFigureEstimator.get_center(points)
         if center:
             for key in points:
-                if points[key] and key != POINT_JUMP:
+                if points[key]:
                     points[key] = ((points[key][0] - center[0]) * scale_factor + new_center[0], (points[key][1] - center[1]) * scale_factor + new_center[1])
         return points
 
@@ -128,20 +128,20 @@ class StickFigureEstimator():
                              int(points[k][1] * image.shape[0]))
         for i in range(18):
             if points[i]:
-                image = cv2.circle(image, points[i], 20, (255, 0, 0), -1)
-                image = cv2.putText(image, str(
+                cv2.circle(image, points[i], 20, (255, 0, 0), -1)
+                cv2.putText(image, str(
                     i), points[i], cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
         if points[5] and points[7]:
-            image = cv2.line(image, points[5], points[7], (0, 0, 255), 5)
+            cv2.line(image, points[5], points[7], (0, 0, 255), 5)
         if points[5] and points[6]:
-            image = cv2.line(image, points[5], points[6], (0, 0, 255), 5)
+            cv2.line(image, points[5], points[6], (0, 0, 255), 5)
         
         if points[7] and points[9]:
-            image = cv2.line(image, points[7], points[9], (0, 0, 255), 5)
+            cv2.line(image, points[7], points[9], (0, 0, 255), 5)
 
         if points[6] and points[8]:
-            image = cv2.line(image, points[6], points[8], (0, 0, 255), 5)
+            cv2.line(image, points[6], points[8], (0, 0, 255), 5)
         if points[8] and points[10]:
-            image = cv2.line(image, points[8], points[10], (0, 0, 255), 5)
+            cv2.line(image, points[8], points[10], (0, 0, 255), 5)
 
         return image

@@ -210,10 +210,10 @@ class Movement():
                         pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
                         pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
                         # Display
-                        frame = cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+                        cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
         
         # Draw score on frame
-        frame = cv2.putText(frame, text=self.get_score(), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
+        cv2.putText(frame, text=self.get_score(), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
                 fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
         # -----------------
         # SEND JUMP MESSAGE
@@ -223,7 +223,7 @@ class Movement():
                 self.jump_counter = 24
             if self.jump_counter > 0:
                 text_spot = (int(0.45 * frame.shape[1]), int(0.1 * frame.shape[0]))
-                frame = cv2.putText(frame, text='JUMP!', org=text_spot, fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
+                cv2.putText(frame, text='JUMP!', org=text_spot, fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
                 fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
                 self.jump_counter -= 1
         return frame
@@ -244,7 +244,7 @@ class Movement():
                 pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
                 pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
                 # Display
-                frame = cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+                cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
         return frame
 
     def reset(self):
