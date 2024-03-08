@@ -116,8 +116,10 @@ def render_teacher_record():
             frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
         elif st.session_state['mode'] == "record":
             title.title("Recording... Press Stop to Finish.")
-            # TODO: add recording indicator onto frame
             frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
+            # Flashing recording circle to indicate recording every half second
+            if (loop_start // 500_000_000) % 2 == 0:
+                frame = cv2.circle(frame, (frame.shape[1] - 50, 50), 20, (255, 0, 0), -1)
             st.session_state['movement'].add_captured_points(new_points)
         elif st.session_state['mode'] == "display":
             title.title("Finished Capturing Movement! Press Send to Send to Students.")

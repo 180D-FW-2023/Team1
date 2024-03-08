@@ -55,7 +55,7 @@ def render_home_page():
         st.title("Welcome to MirrorMe!")
     mirrormodule_input = st.empty()
     mirrormodule_name = mirrormodule_input.text_input(
-            "Enter Your MirrorModule ID. Leave blank if you not using a MirrorModule.",
+            "Enter Your MirrorModule ID. Leave blank if you're not using a MirrorModule.",
             placeholder="MirrorModule ID",
             disabled=False
     )
@@ -75,7 +75,7 @@ def render_home_page():
             top_header.markdown("Invalid MirrorModule ID. Please Try Again.")
         else:
             mirrormodule_input.text_input(
-                    "Enter Your MirrorModule ID. Leave blank if you not using a MirrorModule.",
+                    "Enter Your MirrorModule ID. Leave blank if you're not using a MirrorModule.",
                     placeholder=st.session_state["mirrormodule_name"],
                     disabled=True
             )
