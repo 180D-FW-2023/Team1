@@ -71,7 +71,7 @@ def render_teacher_record():
     st.session_state['mqtt'].on_message = mirrorme_on_recv
     if st.session_state.get("mirrormodule_name", None) is not None:
         st.session_state['mirrormodule_mqtt'].on_message = mirrormodule_on_recv
-    st.title("Record your Movement for your Students!")
+    title = st.empty()
     st.header(" ")
     st.markdown("Make sure your whole body is visible in the frame.")
     cap = cv2.VideoCapture(0)
@@ -87,7 +87,7 @@ def render_teacher_record():
         exit_button = st.button("Exit", on_click=exit_on_click)
     with col2:
         recording_button = st.empty()
-        record = recording_button.button(f'{"Record" if st.session_state["mode"] == "idle" else ("Rerecord" if st.session_state["mode"] == "display" else "Stop")}', on_click=record_on_click)
+        record = recording_button.button(f'Start/Stop', on_click=record_on_click)
     with col3:
         send_button = st.empty()
         send = send_button.button("Send", disabled=(False if st.session_state['mode'] == "display" else True), on_click=send_on_click)
@@ -112,17 +112,21 @@ def render_teacher_record():
 
         # Idle mode
         if st.session_state['mode'] == "idle":
+            title.title("Record your Movement for your Students!")
             frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
         elif st.session_state['mode'] == "record":
+            title.title("Recording... Press Stop to Finish.")
+            # TODO: add recording indicator onto frame
             frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
             st.session_state['movement'].add_captured_points(new_points)
         elif st.session_state['mode'] == "display":
+            title.title("Finished Capturing Movement! Press Send to Send to Students.")
             if st.session_state['movement'].is_done():
                 print("Restarting Movement")
                 st.session_state['movement'].reset()
             frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
             curr_score = st.session_state['movement'].get_current_score()
-            if st.session_state['mirrormodule_name'] is not None:
+            if st.session_state.get("mirrormodule_name", None) is not None:
                 st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
                                 json.dumps({"command": "score", "score": curr_score}), qos=1)
         frame_holder.image(frame)

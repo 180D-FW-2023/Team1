@@ -106,7 +106,7 @@ def render_student_perform():
                 frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
                 score = st.session_state['movement'].get_score()
                 curr_score = st.session_state['movement'].get_current_score()
-                if st.session_state['mirrormodule_name'] is not None:
+                if st.session_state.get("mirrormodule_name", None) is not None:
                     st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
                                     json.dumps({"command": "score", "score": curr_score}), qos=1)
                 st.session_state['score'] = score

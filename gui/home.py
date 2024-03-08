@@ -8,9 +8,9 @@ import time
 import json
 
 # Change session state based on page
-top_header = st.empty()
+top_header = st.markdown("‎ ‎")
 if st.session_state.get('message', False):
-    top_header.header(st.session_state['message'])
+    top_header.markdown(st.session_state['message'])
 # If not redirected from home page, clear session state
 if st.session_state.get('current_page', None) != 'home':
     st.session_state.clear()
@@ -57,9 +57,9 @@ def render_home_page():
     mirrormodule_name = mirrormodule_input.text_input(
             "Enter Your MirrorModule ID. Leave blank if you not using a MirrorModule.",
             placeholder="MirrorModule ID",
-            disabled=False,
-            key="1"
+            disabled=False
     )
+    print(mirrormodule_name)
     if mirrormodule_name:
         st.session_state['mirrormodule_name'] = mirrormodule_name
         st.session_state['mirrormodule_mqtt'].on_connect = (lambda client, userdata, flags, rc: \
@@ -67,25 +67,19 @@ def render_home_page():
         st.session_state['mirrormodule_mqtt'].on_message = mirrormodule_on_recv
         st.session_state['mirrormodule_mqtt'].subscribe(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', qos=1)
         st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', json.dumps({"command": "ping"}), qos=1)
-        mirrormodule_input.empty()
-        mirrormodule_name = mirrormodule_input.text_input(
-            "Enter Your MirrorModule ID. Leave blank if you're not using a MirrorModule.",
-            placeholder=st.session_state["mirrormodule_name"],
-            disabled=True,
-            key="2"
-        )
         loop_start = time.monotonic_ns()
         while (time.monotonic_ns() < loop_start + (2_000_000_000)) and not st.session_state.get('valid_mirrormodule', False):
             # Timeout for validating MirrorModule name
             pass
         if not st.session_state.get('valid_mirrormodule', False):
-            top_header.header("Invalid MirrorModule ID. Please Try Again.")
-            mirrormodule_name = mirrormodule_input.text_input(
-                "Enter Your MirrorModule ID. Leave blank if you not using a MirrorModule.",
-                placeholder="MirrorModule ID",
-                disabled=False,
-                key="3"
+            top_header.markdown("Invalid MirrorModule ID. Please Try Again.")
+        else:
+            mirrormodule_input.text_input(
+                    "Enter Your MirrorModule ID. Leave blank if you not using a MirrorModule.",
+                    placeholder=st.session_state["mirrormodule_name"],
+                    disabled=True
             )
+            top_header.markdown("Connected to MirrorModule. Please Continue.")
     container = st.container()
     with container:
         col1, col2, col3 = st.columns([5.2, 5, 5])
