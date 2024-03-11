@@ -29,7 +29,7 @@ writeByte(LSM6DSL_ADDRESS,LSM6DSL_CTRL1_XL,0b01100000)                 #ODR_XL =
 writeByte(LSM6DSL_ADDRESS,LSM6DSL_TAP_CFG,0b10001110)                  #Enable interrupts and tap detection on X, Y, Z-axis
 writeByte(LSM6DSL_ADDRESS,LSM6DSL_TAP_THS_6D,0b10001100)               #Set tap threshold
 writeByte(LSM6DSL_ADDRESS,LSM6DSL_INT_DUR2,0b01111111)                 #Set Duration, Quiet and Shock time windows
-writeByte(LSM6DSL_ADDRESS,LSM6DSL_WAKE_UP_THS,0b10000000)              #Double-tap enabled 
+writeByte(LSM6DSL_ADDRESS,LSM6DSL_WAKE_UP_THS,0b10000000)              #Double-tap enabled
 writeByte(LSM6DSL_ADDRESS,LSM6DSL_MD1_CFG,0b00001000)                  #Double-tap interrupt driven to INT1 pin
 
 
@@ -108,6 +108,13 @@ def main(mqtt_client):
     imu = MirrorMeIMU()
     time.sleep(2)
     imu.start()
+    writeByte(LSM6DSL_ADDRESS,LSM6DSL_CTRL1_XL,0b01100000)                 #ODR_XL = 416 Hz, FS_XL = +/- 2 g
+    writeByte(LSM6DSL_ADDRESS,LSM6DSL_TAP_CFG,0b10001110)                  #Enable interrupts and tap detection on X, Y, Z-axis
+    writeByte(LSM6DSL_ADDRESS,LSM6DSL_TAP_THS_6D,0b10001100)               #Set tap threshold
+    writeByte(LSM6DSL_ADDRESS,LSM6DSL_INT_DUR2,0b01111111)                 #Set Duration, Quiet and Shock time windows
+    writeByte(LSM6DSL_ADDRESS,LSM6DSL_WAKE_UP_THS,0b10000000)              #Double-tap enabled
+    writeByte(LSM6DSL_ADDRESS,LSM6DSL_MD1_CFG,0b00001000)                  #Double-tap interrupt driven to INT1 pin
+
     while True:
         if pin_frequency != 0:
             time.sleep(1/pin_frequency)
@@ -136,6 +143,8 @@ def main(mqtt_client):
                 print("jump")
     imu.stop()
     sock.close()
-        
+
 if __name__ == "__main__":
     main(mqtt_client)
+
+
