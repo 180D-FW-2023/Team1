@@ -38,7 +38,7 @@ while(True):
             else:
                 last_seen[key] = val
                 
-        frame = StickFigureEstimator.overlay_points(frame, new_points)
+        frame = StickFigureEstimator.overlay_avatar(frame, new_points)
 
         if None != None:
             new_points[POINT_JUMP] = True # TODO: get jump bool from IMU

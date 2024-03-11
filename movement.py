@@ -203,14 +203,14 @@ class Movement():
                     self.score += score_2
                     self.score_counter += 1
                 
-            
-                for (pointa, pointb) in Movement.__get_stick_figure_lines(captured_points).values():
-                    if pointa and pointb:
+                frame = StickFigureEstimator.overlay_avatar(frame, captured_points, int(current_width * frame.shape[1] / 8 ))
+                #for (pointa, pointb) in Movement.__get_stick_figure_lines(captured_points).values():
+                #    if pointa and pointb:
                         # Convert from relative to absolute
-                        pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
-                        pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
+                #        pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
+                #        pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
                         # Display
-                        cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+                #        cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
         
         # Draw score on frame
         cv2.putText(frame, text=self.get_score(), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
@@ -228,14 +228,18 @@ class Movement():
                 self.jump_counter -= 1
         return frame
 
+    
     def is_done(self):
         return self.test_path_ptr >= len(self.captured_path)
 
+    
     def get_score(self):
         return str(int(self.score/self.score_counter * 100)/100.0)
     
+    
     def get_current_score(self):
         return self.current_score
+
     
     def draw_stick_figure_simple(frame, points):
         for (pointa, pointb) in Movement.__get_stick_figure_lines(points).values():
