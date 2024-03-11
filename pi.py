@@ -43,7 +43,13 @@ def on_connect(client, userdata, flags, rc):
 
 def double_tap_callback(channel):
     global mqtt_client
-    mqtt_client.publish(f'mirrorme/mirrormodule_{socket.gethostname()}', json.dumps({"command": "record"}), qos=1)
+    global is_bluetooth
+    global is_mqtt
+    global client_sock
+    if(is_bluetooth):
+        client_sock.send(json.dumps({"command": "record"}))
+    elif(is_mqtt):
+        mqtt_client.publish(f'mirrorme/mirrormodule_{socket.gethostname()}', json.dumps({"command": "record"}), qos=1)
     print("double tap detected")
 
 
@@ -128,6 +134,7 @@ def main(mqtt_client):
             try:
                 data = client_sock.recv(1024)
                 if data != "":
+                    client_sock.send("jump")
                     data = 100 - int(float(data.decode('utf-8')))
                     print(data)
                     if data >= 0 and data <= 100:
@@ -138,7 +145,7 @@ def main(mqtt_client):
             if classify_jump(buf[-1]) is True:
                 if(is_bluetooth):
                     client_sock.send("jump")
-                else:
+                elif(is_mqtt):
                     mqtt_client.publish(f'mirrorme/mirrormodule_{socket.gethostname()}', json.dumps({"command": "jump"}), qos=1)
                 print("jump")
     imu.stop()
