@@ -21,6 +21,9 @@ if 'jump_buffer' not in st.session_state:
     st.session_state['jump_buffer'] = False
     st.session_state['jump_mutex'] = threading.Lock()
 
+if 'last_mode_change' not in st.session_state:
+    st.session_state['last_mode_change'] = time.monotonic_ns()
+
 def mirrorme_on_recv(client, userdata, message):
     print("Student got message")
     msg = json.loads(message.payload.decode("utf-8"))
@@ -35,7 +38,6 @@ def mirrorme_on_recv(client, userdata, message):
         st.session_state['movement'] = movement.Movement(mov)
 
 def mirrormodule_on_recv(client, userdata, message):
-    print("Got message from MirrorModule")
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg:
         return
@@ -43,8 +45,9 @@ def mirrormodule_on_recv(client, userdata, message):
         if st.session_state['mode'] == "idle":
             st.session_state['mode'] = "performing"
         elif st.session_state['mode'] == "performing":
-            st.session_state['mode'] = "idle"
+            pass
     elif msg['command'] == 'jump':
+        print("Got jump")
         if st.session_state['mode'] == "performing":
             with st.session_state['jump_mutex']:
                 st.session_state['jump_buffer'] = True
@@ -113,6 +116,9 @@ def render_student_perform():
             else:
                 score = st.session_state['movement'].get_score()
                 st.session_state['mqtt'].publish(f'mirrorme/student_{st.session_state["room_code"]}', json.dumps({"command": "score", "name": st.session_state['name'], "score": score}), qos=1)
+                if st.session_state.get("mirrormodule_name", None) is not None:
+                    st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
+                                    json.dumps({"command": "score", "score": 100}), qos=1)
                 st.session_state['mode'] = "idle"
         
         frame_holder.image(frame)

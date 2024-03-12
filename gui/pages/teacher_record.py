@@ -21,6 +21,9 @@ if 'jump_buffer' not in st.session_state:
     st.session_state['jump_buffer'] = False
     st.session_state['jump_mutex'] = threading.Lock()
 
+if 'last_mode_change' not in st.session_state:
+    st.session_state['last_mode_change'] = time.monotonic_ns()
+
 FPS = 30
 
 def mirrorme_on_recv(client, userdata, message):
@@ -34,19 +37,21 @@ def mirrorme_on_recv(client, userdata, message):
         st.session_state['students'].update({msg['name']: msg['score']})
 
 def mirrormodule_on_recv(client, userdata, message):
-    print("Got message from MirrorModule")
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg:
         return
     if msg['command'] == 'record':
-        if st.session_state['mode'] == "idle" or st.session_state['mode'] == "display":
-            print("switching to record mode")
-            st.session_state['mode'] = "record"
-            st.session_state['movement'] = movement.Movement()
-        elif st.session_state['mode'] == "record":
-            print("switching to display mode")
-            st.session_state['mode'] = "display"
+        if st.session_state['last_mode_change'] + 1_000_000_000 < time.monotonic_ns():
+            if st.session_state['mode'] == "idle":
+                print("switching to record mode")
+                st.session_state['mode'] = "record"
+                st.session_state['movement'] = movement.Movement()
+            elif st.session_state['mode'] == "record":
+                print("switching to display mode")
+                st.session_state['mode'] = "display"
+            st.session_state['last_mode_change'] = time.monotonic_ns()
     elif msg['command'] == 'jump':
+        print("Got jump")
         with st.session_state['jump_mutex']:
             st.session_state['jump_buffer'] = True
 
@@ -60,9 +65,10 @@ def record_on_click():
         st.session_state['mode'] = "display"
 
 def send_on_click():
-    mov = st.session_state['movement'].get_movement_json()
-    st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "movement", "mov" : mov}), qos=1)
-    st.session_state['mode'] = "idle"
+    if st.session_state['mode'] == "display":
+        mov = st.session_state['movement'].get_movement_json()
+        st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "movement", "mov" : mov}), qos=1)
+        st.session_state['mode'] = "idle"
 
 def exit_on_click():
     st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "exit"}), qos=1)
@@ -93,7 +99,7 @@ def render_teacher_record():
             record = recording_button.button(f'Start/Stop', on_click=record_on_click)
         with col3:
             send_button = st.empty()
-            send = send_button.button("Send", disabled=(False if st.session_state['mode'] == "display" else True), on_click=send_on_click)
+            send = send_button.button("Send", on_click=send_on_click)
         while cap.isOpened():
             # Get loop start time
             loop_start = time.monotonic_ns()
@@ -117,6 +123,9 @@ def render_teacher_record():
             if st.session_state['mode'] == "idle":
                 title.title("Record your Movement for your Students!")
                 frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
+                if st.session_state.get("mirrormodule_name", None) is not None:
+                    st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
+                                    json.dumps({"command": "score", "score": 100}), qos=1)
             elif st.session_state['mode'] == "record":
                 title.title("Recording... Press Stop to Finish.")
                 frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
@@ -127,7 +136,9 @@ def render_teacher_record():
             elif st.session_state['mode'] == "display":
                 title.title("Finished Capturing Movement! Press Send to Send to Students.")
                 if st.session_state['movement'].is_done():
-                    print("Restarting Movement")
+                    if st.session_state.get("mirrormodule_name", None) is not None:
+                        st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
+                                    json.dumps({"command": "score", "score": 100}), qos=1)
                     st.session_state['movement'].reset()
                 frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
                 curr_score = st.session_state['movement'].get_current_score()
