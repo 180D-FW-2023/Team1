@@ -20,6 +20,7 @@ class Movement():
         self.captured_path = []
         self.jump_counter = 0
         self.score = 0
+        self.feedback_score = 0
         self.current_score = 0
         self.score_counter = 1
         self.feedback_counter = 1
@@ -196,40 +197,47 @@ class Movement():
                 if score_1 and score_2: 
                     self.current_score = (score_1 + score_2) / 2
                     self.score += (score_1 + score_2) / 2
+                    self.feedback_score += (score_1 + score_2) /2
                     self.score_counter += 1
                     self.feedback_counter += 1 
                 elif score_1:
                     self.current_score = score_1
                     self.score += score_1
+                    self.feedback_score += score_1
+                    self.score_counter += 1
                     self.feedback_counter += 1 
                 elif score_2:
                     self.current_score = score_2
                     self.score += score_2
+                    self.feedback_score += score_2
+                    self.score_counter += 1
                     self.feedback_counter += 1 
                 
                 frame = StickFigureEstimator.overlay_avatar(frame, captured_points, int(current_width * frame.shape[1] / 8 ))
-            score = self.get_score() 
+            feedback_score = self.feedback_score / self.feedback_counter
             
             if self.feedback_counter > self.FEEDBACK_RESET:
                 self.feedback_counter = 0
-                if score > 90:
+                self.feedback_score = 0
+                if feedback_score > 90:
                     self.feedback_rating = "PERFECT!"
-                elif score > 80:
+                elif feedback_score > 80:
                     self.feedback_rating = "GREAT!"
-                elif score > 70:
+                elif feedback_score > 70:
                     self.feedback_rating = "GOOD"
-                elif score > 60:
+                elif feedback_score > 60:
                     self.feedback_rating = "OK"
                 else:
-                    self.feedback_rating = "TRY AGAIN"
+                    self.feedback_rating = "TRY HARDER"
                     
                     
             # Draw score on frame
             cv2.putText(frame, text=str(self.get_score()), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
                     fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
             # Draw feedback on frame
-            cv2.putText(frame, text=self.feedback_rating, org=(75, 200), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
-                    fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA)
+            if self.feedback_counter < Movement.FEEDBACK_RESET / 2:
+                cv2.putText(frame, text=self.feedback_rating, org=(75, 200), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
+                        fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA)
 
         
         # -----------------

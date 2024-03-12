@@ -25,7 +25,7 @@ while(True):
     frame = cv2.flip(frame, 1)
 
     # For testing, after 10 seconds, set to display mode
-    if record_mode and time.monotonic_ns() > time_start + (10*1_000_000_000):
+    if record_mode and time.monotonic_ns() > time_start + (20*1_000_000_000):
         record_mode = False
         print("Entering display mode")
 
