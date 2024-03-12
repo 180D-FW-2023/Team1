@@ -13,7 +13,7 @@ class Movement():
     RED = (255, 0, 0)
 
     STICK_FIGURE_THICKNESS = 5
-
+    FEEDBACK_RESET = 20
 
     def __init__(self, mov_json = None):
         self.test_path_ptr = 0
@@ -22,8 +22,10 @@ class Movement():
         self.score = 0
         self.current_score = 0
         self.score_counter = 1
+        self.feedback_counter = 1
+        self.feedback_rating = ""
         self.last_seen = {x: None for x in range(17)}
-        self.positions = [{x: None for x in range(17)}]
+        self.history = [{x: None for x in range(17)}]
         if mov_json != None:
             imported_path = json.JSONDecoder().decode(mov_json)
             # Perform JSON conversion for our expected formatting
@@ -37,6 +39,22 @@ class Movement():
                             v = (np.float32(v[0]), np.float32(v[1]))
                     new_points[int(k)] = v
                 self.captured_path.append(new_points)
+                
+                            
+            # smoothing captured_path
+            count = {x: 0 for x in range(17)}
+            for points in self.captured_path:
+                for i in range(17):
+                    if points[i] is not None:
+                        count[i] += 1
+            
+            
+            for points in self.captured_path:
+                for i in range(17):
+                    if count[i] < 5:
+                        points[i] = None
+                        
+                        
         self.active_points = []
 
     def get_movement_json(self):
@@ -55,7 +73,7 @@ class Movement():
         points = dict(points)
         self.captured_path.append(points)
 
-    def __get_stick_figure_lines(self, points):
+    def __get_stick_figure_lines(points):
         hip_midpoint = None if (points[POINT_RIGHT_HIP] == None or points[POINT_LEFT_HIP] == None) \
                     else (((points[POINT_RIGHT_HIP][0] +  points[POINT_LEFT_HIP][0]) / 2), ((points[POINT_RIGHT_HIP][1] +  points[POINT_LEFT_HIP][1]) / 2))
         res = {
@@ -136,25 +154,24 @@ class Movement():
             
             for key, val in current_points.items():
                 if val is None:
-                    current_points[key] = self.positions[-1][key]
+                    current_points[key] = self.history[-1][key]
             
-            self.positions.append(current_points)
+            self.history.append(current_points)
 
-            
 
             for k in (POINT_LEFT_SHOULDER, POINT_RIGHT_SHOULDER):
                 i = 0
-                while self.positions[i][k] is None:
+                while self.history[i][k] is None:
                     i += 1
-                    if i >= len(self.positions):
+                    if i >= len(self.history):
                         break
-                if i >= len(self.positions):
+                if i >= len(self.history):
                     continue
-                smoothed_data = (self.positions[i][k])
+                smoothed_data = (self.history[i][k])
                 i += 1
-                while i < len(self.positions):
-                    st_x = alpha * self.positions[i][k][0] + (1 - alpha) * smoothed_data[0]
-                    st_y = alpha * self.positions[i][k][1] + (1 - alpha) * smoothed_data[1]
+                while i < len(self.history):
+                    st_x = alpha * self.history[i][k][0] + (1 - alpha) * smoothed_data[0]
+                    st_y = alpha * self.history[i][k][1] + (1 - alpha) * smoothed_data[1]
                     smoothed_data = (st_x, st_y)
                     i += 1
                 current_points[k] = smoothed_data
@@ -164,37 +181,57 @@ class Movement():
 
             current_center = StickFigureEstimator.get_center(current_points)
             current_width = StickFigureEstimator.get_width(current_points)
-            score_1, score_2 = None, None
-            if current_center and current_width and captured_width:
-                scale_factor = current_width / captured_width
-                captured_points = StickFigureEstimator.scale_points(captured_points, current_center, scale_factor)
-            if captured_points[POINT_RIGHT_WRIST] and current_points[POINT_RIGHT_WRIST]:
-                score_1 = StickFigureEstimator.score(captured_points[POINT_RIGHT_WRIST], current_points[POINT_RIGHT_WRIST])
-            if captured_points[POINT_LEFT_WRIST] and current_points[POINT_LEFT_WRIST]:
-                score_2 = StickFigureEstimator.score(captured_points[POINT_LEFT_WRIST], current_points[POINT_LEFT_WRIST])
-              
-            if score_1 and score_2: 
-                self.current_score = (score_1 + score_2) / 2
-                self.score += (score_1 + score_2) / 2
-                self.score_counter += 1
-            elif score_1:
-                self.current_score = score_1
-                self.score += score_1
-                self.score_counter += 1
-            elif score_2:
-                self.current_score = score_2
-                self.score += score_2
-                self.score_counter += 1
             
-            frame = cv2.putText(frame, text=str(self.score/self.score_counter), org=(100, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
-                fontScale=3, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
-            for (pointa, pointb) in self.__get_stick_figure_lines(captured_points).values():
-                if pointa and pointb:
-                    # Convert from relative to absolute
-                    pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
-                    pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
-                    # Display
-                    frame = cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+            # display avatar and calculate score
+            if captured_width and current_center and current_width:
+                score_1, score_2 = None, None
+                if current_center and current_width and captured_width:
+                    scale_factor = current_width / captured_width
+                    captured_points = StickFigureEstimator.scale_points(captured_points, current_center, scale_factor)
+                if captured_points[POINT_RIGHT_WRIST] and current_points[POINT_RIGHT_WRIST]:
+                    score_1 = StickFigureEstimator.score(captured_points[POINT_RIGHT_WRIST], current_points[POINT_RIGHT_WRIST])
+                if captured_points[POINT_LEFT_WRIST] and current_points[POINT_LEFT_WRIST]:
+                    score_2 = StickFigureEstimator.score(captured_points[POINT_LEFT_WRIST], current_points[POINT_LEFT_WRIST])
+                
+                if score_1 and score_2: 
+                    self.current_score = (score_1 + score_2) / 2
+                    self.score += (score_1 + score_2) / 2
+                    self.score_counter += 1
+                    self.feedback_counter += 1 
+                elif score_1:
+                    self.current_score = score_1
+                    self.score += score_1
+                    self.feedback_counter += 1 
+                elif score_2:
+                    self.current_score = score_2
+                    self.score += score_2
+                    self.feedback_counter += 1 
+                
+                frame = StickFigureEstimator.overlay_avatar(frame, captured_points, int(current_width * frame.shape[1] / 8 ))
+            score = self.get_score() 
+            
+            if self.feedback_counter > self.FEEDBACK_RESET:
+                self.feedback_counter = 0
+                if score > 90:
+                    self.feedback_rating = "PERFECT!"
+                elif score > 80:
+                    self.feedback_rating = "GREAT!"
+                elif score > 70:
+                    self.feedback_rating = "GOOD"
+                elif score > 60:
+                    self.feedback_rating = "OK"
+                else:
+                    self.feedback_rating = "TRY AGAIN"
+                    
+                    
+            # Draw score on frame
+            cv2.putText(frame, text=str(self.get_score()), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
+                    fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
+            # Draw feedback on frame
+            cv2.putText(frame, text=self.feedback_rating, org=(75, 200), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
+                    fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA)
+
+        
         # -----------------
         # SEND JUMP MESSAGE
         # -----------------
@@ -203,16 +240,33 @@ class Movement():
                 self.jump_counter = 24
             if self.jump_counter > 0:
                 text_spot = (int(0.45 * frame.shape[1]), int(0.1 * frame.shape[0]))
-                frame = cv2.putText(frame, text='JUMP!', org=text_spot, fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
-                   fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
+                cv2.putText(frame, text='JUMP!', org=text_spot, fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
+                fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
                 self.jump_counter -= 1
         return frame
 
+    
     def is_done(self):
         return self.test_path_ptr >= len(self.captured_path)
 
+    
     def get_score(self):
-        return str(self.score/self.score_counter)
+        return int(self.score/self.score_counter * 100)/100.0
+    
+    
+    def get_current_score(self):
+        return self.current_score
+
+    
+    def draw_stick_figure_simple(frame, points):
+        for (pointa, pointb) in Movement.__get_stick_figure_lines(points).values():
+            if pointa and pointb:
+                # Convert from relative to absolute
+                pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
+                pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
+                # Display
+                cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+        return frame
 
     def reset(self):
         self.test_path_ptr = 0
@@ -221,3 +275,4 @@ class Movement():
         self.score = 0
         self.score_counter = 1
         self.last_seen = {x: None for x in range(17)}
+        self.history = [{x: None for x in range(17)}]

@@ -20,9 +20,8 @@ if 'room_code' not in st.session_state:
 if 'students' not in st.session_state:
     st.session_state['students'] = {}
 
-
 # On receive callback for student channel
-def on_recv(client, userdata, message):
+def mirrorme_on_recv(client, userdata, message):
     print("Teacher got message")
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg or 'name' not in msg:
@@ -40,7 +39,7 @@ if 'mqtt' not in st.session_state:
     #           Give a fault if it was not.
     mqtt_client.on_connect = (lambda client, userdata, flags, rc: \
                             client.subscribe(f'mirrorme/student_{st.session_state["room_code"]}', qos=1))
-    mqtt_client.on_message = on_recv
+    mqtt_client.on_message = mirrorme_on_recv
     mqtt_client.connect_async('test.mosquitto.org')
     def thread_looper(client):
         client.loop_forever()

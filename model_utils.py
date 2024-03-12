@@ -35,7 +35,7 @@ class StickFigureEstimator():
 
 
     def generate_points(image):
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = tf.expand_dims(image, axis=0)
         resized_image = tf.image.resize(
             image, (StickFigureEstimator.input_size, StickFigureEstimator.input_size))
@@ -46,7 +46,7 @@ class StickFigureEstimator():
 
         for i, (y, x, score) in enumerate(keypoints_with_scores[0][0]):
             # print(x, y)
-            if score > 0.4:
+            if score > 0.5:
                 points[i] = (x, y)
             else:
                 points[i] = None
@@ -104,45 +104,178 @@ class StickFigureEstimator():
         # Calculate the score for distances between buffer and max distance
         # Linearly scale the score from 100 at buffer_distance to 0 at max_distance
         score = 100 * ((1 - (distance - buffer_distance) / (max_distance - buffer_distance)) ** 2)
-        score = math.floor(score*100)/100
         return score
 
-    def overlay_points(image, points, scale_factor=1):
-        points = dict(points)
-        if points[5] and points[6] and points[11] and points[12]:
-            center_x = (points[5][0] + points[6][0] +
-                        points[11][0] + points[12][0]) / 4
-            center_y = (points[5][1] + points[6][1] +
-                        points[11][1] + points[12][1]) / 4
 
-            # print(center_x, center_y)
-            points[17] = (center_x, center_y)
-            # width = abs(points[5][0] - points[6][0])
-            for key in points:
-                if points[key]:
-                    points[key] = ((points[key][0] - center_x) * scale_factor + center_x, (points[key][1] - center_y) * scale_factor + center_y)
-        else:
-            points[17] = None
-        for k in points:
-            if points[k] is not None:
-                points[k] = (int(points[k][0] * image.shape[1]),
-                             int(points[k][1] * image.shape[0]))
-        for i in range(18):
+    def overlay_points(image, points):
+        points = dict(points)
+        for i in range(17):
+            if points[i] is not None:
+                points[i] = (int(points[i][0] * image.shape[1]),
+                             int(points[i][1] * image.shape[0]))
+                
+        for i in range(17):
             if points[i]:
-                image = cv2.circle(image, points[i], 20, (255, 0, 0), -1)
-                image = cv2.putText(image, str(
+                cv2.circle(image, points[i], 20, (255, 0, 0), -1)
+                cv2.putText(image, str(
                     i), points[i], cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                
         if points[5] and points[7]:
-            image = cv2.line(image, points[5], points[7], (0, 0, 255), 5)
+            cv2.line(image, points[5], points[7], (0, 0, 255), 5)
         if points[5] and points[6]:
-            image = cv2.line(image, points[5], points[6], (0, 0, 255), 5)
+            cv2.line(image, points[5], points[6], (0, 0, 255), 5)
         
         if points[7] and points[9]:
-            image = cv2.line(image, points[7], points[9], (0, 0, 255), 5)
+            cv2.line(image, points[7], points[9], (0, 0, 255), 5)
 
         if points[6] and points[8]:
-            image = cv2.line(image, points[6], points[8], (0, 0, 255), 5)
+            cv2.line(image, points[6], points[8], (0, 0, 255), 5)
         if points[8] and points[10]:
-            image = cv2.line(image, points[8], points[10], (0, 0, 255), 5)
+            cv2.line(image, points[8], points[10], (0, 0, 255), 5)
 
+        return image
+
+
+    def rectangle_from_line(point1, point2, thickness):
+        # get 4 points of rectangle, lines parallel to point1 and point2
+        if point2[0] - point1[0] == 0:  # vertical line, slope is undefined
+            p1 = [int(point1[0] - thickness/2), point1[1]]
+            p2 = [int(point1[0] + thickness/2), point1[1]]
+            p3 = [int(point2[0] + thickness/2), point2[1]]
+            p4 = [int(point2[0] - thickness/2), point2[1]]
+        elif point2[1] - point1[1] == 0:  # horizontal line, slope is 0
+            p1 = [point1[0], int(point1[1] - thickness/2)]
+            p2 = [point1[0], int(point1[1] + thickness/2)]
+            p3 = [point2[0], int(point2[1] + thickness/2)]
+            p4 = [point2[0], int(point2[1] - thickness/2)]
+        else:
+            slope = (point2[1] - point1[1]) / (point2[0] - point1[0])
+            slope_perpendicular = -1 / slope
+            # get the 4 points to define the rectangle
+            dx = thickness / np.sqrt(1 + slope_perpendicular**2)
+            dy = slope_perpendicular * dx
+
+            p1 = [int(point1[0] - dx), int(point1[1] - dy)]
+            p2 = [int(point1[0] + dx), int(point1[1] + dy)]
+            p3 = [int(point2[0] + dx), int(point2[1] + dy)]
+            p4 = [int(point2[0] - dx), int(point2[1] - dy)]
+        return np.array([p1, p2, p3, p4])
+
+
+    def overlay_avatar(image, points, thickness=50):
+        points = dict(points)
+        for i in range(17):
+            if points[i] is not None:
+                points[i] = (int(points[i][0] * image.shape[1]),
+                             int(points[i][1] * image.shape[0]))
+
+        alpha = 0.5
+        overlay = np.zeros_like(image, dtype=np.uint8)
+        arm_color = (0, 0, 255)
+        torso_color = (0, 255, 0)
+        head_color = (255, 0, 0)
+        outline_color = (255, 255, 255)
+        # left arm
+        if points[POINT_LEFT_SHOULDER] and points[POINT_LEFT_ELBOW]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_LEFT_SHOULDER], points[POINT_LEFT_ELBOW], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
+        # left forearm
+        if points[POINT_LEFT_ELBOW] and points[POINT_LEFT_WRIST]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_LEFT_ELBOW], points[POINT_LEFT_WRIST], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+            
+        # left wrist
+        if points[POINT_LEFT_WRIST]:
+            cv2.circle(overlay, points[POINT_LEFT_WRIST], thickness * 2, arm_color, -1)
+        
+        # left elbow
+        if points[POINT_LEFT_ELBOW]:
+            cv2.circle(overlay, points[POINT_LEFT_ELBOW], thickness * 2, arm_color, -1)
+        
+        # right arm
+        if points[POINT_RIGHT_SHOULDER] and points[POINT_RIGHT_ELBOW]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_SHOULDER], points[POINT_RIGHT_ELBOW], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
+        # right forearm
+        if points[POINT_RIGHT_ELBOW] and points[POINT_RIGHT_WRIST]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_ELBOW], points[POINT_RIGHT_WRIST], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
+        # right wrist
+        if points[POINT_RIGHT_WRIST]:
+            cv2.circle(overlay, points[POINT_RIGHT_WRIST], thickness * 2, arm_color, -1)
+        
+        # right elbow
+        if points[POINT_RIGHT_ELBOW]:
+            cv2.circle(overlay, points[POINT_RIGHT_ELBOW], thickness * 2, arm_color, -1)
+        
+        # torso
+        if points[POINT_RIGHT_SHOULDER] and points[POINT_LEFT_SHOULDER] and points[POINT_RIGHT_HIP] and points[POINT_LEFT_HIP]:
+            rect_points = np.array([points[POINT_RIGHT_SHOULDER], points[POINT_LEFT_SHOULDER], points[POINT_LEFT_HIP], points[POINT_RIGHT_HIP]])
+            cv2.fillPoly(overlay, [rect_points], torso_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+            
+        
+        # left thigh
+        if points[POINT_LEFT_HIP] and points[POINT_LEFT_KNEE]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_LEFT_HIP], points[POINT_LEFT_KNEE], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
+        # left calf
+        if points[POINT_LEFT_KNEE] and points[POINT_LEFT_FOOT]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_LEFT_KNEE], points[POINT_LEFT_FOOT], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+            
+        # left foot
+        if points[POINT_LEFT_FOOT]:
+            cv2.circle(overlay, points[POINT_LEFT_FOOT], thickness * 2, arm_color, -1)
+        
+        # left knee
+        if points[POINT_LEFT_KNEE]:
+            cv2.circle(overlay, points[POINT_LEFT_KNEE], thickness * 2, arm_color, -1)
+            
+        # right thigh
+        if points[POINT_RIGHT_HIP] and points[POINT_RIGHT_KNEE]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_HIP], points[POINT_RIGHT_KNEE], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+        
+        # right calf
+        if points[POINT_RIGHT_KNEE] and points[POINT_RIGHT_FOOT]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_KNEE], points[POINT_RIGHT_FOOT], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+        
+        # right foot
+        if points[POINT_RIGHT_FOOT]:
+            cv2.circle(overlay, points[POINT_RIGHT_FOOT], thickness * 2, arm_color, -1)
+        
+        # right knee
+        if points[POINT_RIGHT_KNEE]:
+            cv2.circle(overlay, points[POINT_RIGHT_KNEE], thickness * 2, arm_color, -1)
+        
+        
+        # head
+        if points[POINT_NOSE]:
+            thickness *= 2
+            rect_points = np.array([
+                (int(points[POINT_NOSE][0] - thickness), int(points[POINT_NOSE][1] - thickness)),
+                (int(points[POINT_NOSE][0] - thickness), int(points[POINT_NOSE][1] + thickness)),
+                (int(points[POINT_NOSE][0] + thickness), int(points[POINT_NOSE][1] + thickness)),
+                (int(points[POINT_NOSE][0] + thickness), int(points[POINT_NOSE][1] - thickness))]
+            )
+            cv2.fillPoly(overlay, [rect_points], head_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
+        
+        image = cv2.addWeighted(image, 1, overlay, alpha, 0)
+        
         return image
