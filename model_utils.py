@@ -174,15 +174,18 @@ class StickFigureEstimator():
         arm_color = (0, 0, 255)
         torso_color = (0, 255, 0)
         head_color = (255, 0, 0)
+        outline_color = (255, 255, 255)
         # left arm
         if points[POINT_LEFT_SHOULDER] and points[POINT_LEFT_ELBOW]:
             rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_LEFT_SHOULDER], points[POINT_LEFT_ELBOW], thickness)
             cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
 
         # left forearm
         if points[POINT_LEFT_ELBOW] and points[POINT_LEFT_WRIST]:
             rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_LEFT_ELBOW], points[POINT_LEFT_WRIST], thickness)
             cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
             
         # left wrist
         if points[POINT_LEFT_WRIST]:
@@ -192,30 +195,40 @@ class StickFigureEstimator():
         if points[POINT_RIGHT_SHOULDER] and points[POINT_RIGHT_ELBOW]:
             rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_SHOULDER], points[POINT_RIGHT_ELBOW], thickness)
             cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
         
         # right forearm
         if points[POINT_RIGHT_ELBOW] and points[POINT_RIGHT_WRIST]:
             rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_ELBOW], points[POINT_RIGHT_WRIST], thickness)
             cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
         
         # right wrist
         if points[POINT_RIGHT_WRIST]:
             cv2.circle(overlay, points[POINT_RIGHT_WRIST], thickness * 2, arm_color, -1)
         
+        
         # torso
         if points[POINT_RIGHT_SHOULDER] and points[POINT_LEFT_SHOULDER] and points[POINT_RIGHT_HIP] and points[POINT_LEFT_HIP]:
             rect_points = np.array([points[POINT_RIGHT_SHOULDER], points[POINT_LEFT_SHOULDER], points[POINT_LEFT_HIP], points[POINT_RIGHT_HIP]])
             cv2.fillPoly(overlay, [rect_points], torso_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
         
         # head
         if points[POINT_NOSE]:
             thickness *= 2
-            cv2.fillPoly(overlay, [np.array([
+            rect_points = np.array([
                 (int(points[POINT_NOSE][0] - thickness), int(points[POINT_NOSE][1] - thickness)),
                 (int(points[POINT_NOSE][0] - thickness), int(points[POINT_NOSE][1] + thickness)),
                 (int(points[POINT_NOSE][0] + thickness), int(points[POINT_NOSE][1] + thickness)),
                 (int(points[POINT_NOSE][0] + thickness), int(points[POINT_NOSE][1] - thickness))]
-            )], head_color)
+            )
+            cv2.fillPoly(overlay, [rect_points], head_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+
         
         image = cv2.addWeighted(image, 1, overlay, alpha, 0)
         
