@@ -2,9 +2,12 @@ import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 import cv2
 import time
+from streamlit_lottie import st_lottie
 import movement
 import json
 from model_utils import *
+
+st.set_page_config(layout='wide')
 
 # Change session state based on page
 st.session_state['current_page'] = 'teacher_record'
@@ -47,27 +50,39 @@ def exit_on_click():
 
 def render_teacher_record():
     st.session_state['mqtt'].on_message = on_recv
-    st.title("Record your Movement for your Students!")
+    col1, col2 = st.columns([1,25])
+    with col1:
+        st.empty()
+        # st_lottie('https://lottie.host/edb12174-1102-4fc5-a7b7-e695bf7b52c2/ui94YFdvMi.json', key="user")
+    with col2:
+        st.title("Record your Movement for your Students!")
     st.header(" ")
     cap = cv2.VideoCapture(0)
-    col1, col2 = st.columns([20,3])
+    col1, col2 = st.columns([10,50])
     with col1:
-        frame_holder = st.empty()
-    with col2:
         st.subheader("Student Scores:" )
         student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
-    fps_counter = st.empty()
+    with col2:
+        frame_holder = st.empty()
+    # with col2:
+        # st.subheader("Student Scores:" )
+        # student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
+    # fps_counter = st.empty()
     # st.header("Student Scores:" )
     # student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
+    # st.subheader("Student Scores:" )
+    # student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
     col1, col2, col3 = st.columns(3)
-    with col1:
-        exit_button = st.button("Exit", on_click=exit_on_click)
     with col2:
-        recording_button = st.empty()
-        record = recording_button.button(f'{"Record" if st.session_state["mode"] == "idle" else ("Rerecord" if st.session_state["mode"] == "display" else "Stop")}', on_click=record_on_click)
-    with col3:
-        send_button = st.empty()
-        send = send_button.button("Send", disabled=(False if st.session_state['mode'] == "display" else True), on_click=send_on_click)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            exit_button = st.button("Exit", on_click=exit_on_click)
+        with col2:
+            recording_button = st.empty()
+            record = recording_button.button(f'{"Record" if st.session_state["mode"] == "idle" else ("Rerecord" if st.session_state["mode"] == "display" else "Stop")}', on_click=record_on_click)
+        with col3:
+            send_button = st.empty()
+            send = send_button.button("Send", disabled=(False if st.session_state['mode'] == "display" else True), on_click=send_on_click)
     while cap.isOpened():
         # Get loop start time
         loop_start = time.monotonic_ns()
@@ -98,12 +113,12 @@ def render_teacher_record():
             new_points = StickFigureEstimator.generate_points(frame)
             new_points[POINT_JUMP] = False
             frame = st.session_state['movement'].display_and_advance_frame(frame, new_points)
-        frame_holder.image(frame)
+        frame_holder.image(image= frame, width= 900)
         # Spin loop to get 1/FPS FPS
         while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):
             pass
         # Update FPS Counter
-        fps_counter.markdown(f"FPS: {str(1_000_000_000.0 / (time.monotonic_ns() - loop_start))}")
+        # fps_counter.markdown(f"FPS: {str(1_000_000_000.0 / (time.monotonic_ns() - loop_start))}")
         student_scores.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
         if exit_button:
             cap.release()
