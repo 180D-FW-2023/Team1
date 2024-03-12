@@ -22,6 +22,9 @@ if 'jump_buffer' not in st.session_state:
     st.session_state['jump_buffer'] = False
     st.session_state['jump_mutex'] = threading.Lock()
 
+if 'last_mode_change' not in st.session_state:
+    st.session_state['last_mode_change'] = time.monotonic_ns()
+
 def mirrorme_on_recv(client, userdata, message):
     print("Student got message")
     msg = json.loads(message.payload.decode("utf-8"))
@@ -36,7 +39,6 @@ def mirrorme_on_recv(client, userdata, message):
         st.session_state['movement'] = movement.Movement(mov)
 
 def mirrormodule_on_recv(client, userdata, message):
-    print("Got message from MirrorModule")
     msg = json.loads(message.payload.decode("utf-8"))
     if 'command' not in msg:
         return
@@ -44,8 +46,9 @@ def mirrormodule_on_recv(client, userdata, message):
         if st.session_state['mode'] == "idle":
             st.session_state['mode'] = "performing"
         elif st.session_state['mode'] == "performing":
-            st.session_state['mode'] = "idle"
+            pass
     elif msg['command'] == 'jump':
+        print("Got jump")
         if st.session_state['mode'] == "performing":
             with st.session_state['jump_mutex']:
                 st.session_state['jump_buffer'] = True

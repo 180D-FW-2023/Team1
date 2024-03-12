@@ -188,9 +188,9 @@ class Movement():
             # display avatar and calculate score
             if captured_width and current_center and current_width:
                 score_1, score_2 = None, None
-                if current_center and current_width and captured_width:
-                    scale_factor = current_width / captured_width
-                    captured_points = StickFigureEstimator.scale_points(captured_points, current_center, scale_factor)
+                scale_factor = current_width / captured_width
+                captured_points = StickFigureEstimator.scale_points(captured_points, current_center, scale_factor)
+                
                 if captured_points[POINT_RIGHT_WRIST] and current_points[POINT_RIGHT_WRIST]:
                     score_1 = StickFigureEstimator.score(captured_points[POINT_RIGHT_WRIST], current_points[POINT_RIGHT_WRIST])
                 if captured_points[POINT_LEFT_WRIST] and current_points[POINT_LEFT_WRIST]:
