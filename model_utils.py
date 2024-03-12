@@ -191,31 +191,77 @@ class StickFigureEstimator():
         if points[POINT_LEFT_WRIST]:
             cv2.circle(overlay, points[POINT_LEFT_WRIST], thickness * 2, arm_color, -1)
         
+        # left elbow
+        if points[POINT_LEFT_ELBOW]:
+            cv2.circle(overlay, points[POINT_LEFT_ELBOW], thickness * 2, arm_color, -1)
+        
         # right arm
         if points[POINT_RIGHT_SHOULDER] and points[POINT_RIGHT_ELBOW]:
             rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_SHOULDER], points[POINT_RIGHT_ELBOW], thickness)
             cv2.fillPoly(overlay, [rect_points], arm_color)
             cv2.polylines(overlay, [rect_points], True, outline_color, 2)
 
-        
         # right forearm
         if points[POINT_RIGHT_ELBOW] and points[POINT_RIGHT_WRIST]:
             rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_ELBOW], points[POINT_RIGHT_WRIST], thickness)
             cv2.fillPoly(overlay, [rect_points], arm_color)
             cv2.polylines(overlay, [rect_points], True, outline_color, 2)
 
-        
         # right wrist
         if points[POINT_RIGHT_WRIST]:
             cv2.circle(overlay, points[POINT_RIGHT_WRIST], thickness * 2, arm_color, -1)
         
+        # right elbow
+        if points[POINT_RIGHT_ELBOW]:
+            cv2.circle(overlay, points[POINT_RIGHT_ELBOW], thickness * 2, arm_color, -1)
         
         # torso
         if points[POINT_RIGHT_SHOULDER] and points[POINT_LEFT_SHOULDER] and points[POINT_RIGHT_HIP] and points[POINT_LEFT_HIP]:
             rect_points = np.array([points[POINT_RIGHT_SHOULDER], points[POINT_LEFT_SHOULDER], points[POINT_LEFT_HIP], points[POINT_RIGHT_HIP]])
             cv2.fillPoly(overlay, [rect_points], torso_color)
             cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+            
+        
+        # left thigh
+        if points[POINT_LEFT_HIP] and points[POINT_LEFT_KNEE]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_LEFT_HIP], points[POINT_LEFT_KNEE], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
 
+        # left calf
+        if points[POINT_LEFT_KNEE] and points[POINT_LEFT_FOOT]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_LEFT_KNEE], points[POINT_LEFT_FOOT], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+            
+        # left foot
+        if points[POINT_LEFT_FOOT]:
+            cv2.circle(overlay, points[POINT_LEFT_FOOT], thickness * 2, arm_color, -1)
+        
+        # left knee
+        if points[POINT_LEFT_KNEE]:
+            cv2.circle(overlay, points[POINT_LEFT_KNEE], thickness * 2, arm_color, -1)
+            
+        # right thigh
+        if points[POINT_RIGHT_HIP] and points[POINT_RIGHT_KNEE]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_HIP], points[POINT_RIGHT_KNEE], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+        
+        # right calf
+        if points[POINT_RIGHT_KNEE] and points[POINT_RIGHT_FOOT]:
+            rect_points = StickFigureEstimator.rectangle_from_line(points[POINT_RIGHT_KNEE], points[POINT_RIGHT_FOOT], thickness)
+            cv2.fillPoly(overlay, [rect_points], arm_color)
+            cv2.polylines(overlay, [rect_points], True, outline_color, 2)
+        
+        # right foot
+        if points[POINT_RIGHT_FOOT]:
+            cv2.circle(overlay, points[POINT_RIGHT_FOOT], thickness * 2, arm_color, -1)
+        
+        # right knee
+        if points[POINT_RIGHT_KNEE]:
+            cv2.circle(overlay, points[POINT_RIGHT_KNEE], thickness * 2, arm_color, -1)
+        
         
         # head
         if points[POINT_NOSE]:

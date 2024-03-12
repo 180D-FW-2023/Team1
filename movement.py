@@ -13,7 +13,7 @@ class Movement():
     RED = (255, 0, 0)
 
     STICK_FIGURE_THICKNESS = 5
-
+    FEEDBACK_RESET = 20
 
     def __init__(self, mov_json = None):
         self.test_path_ptr = 0
@@ -22,6 +22,8 @@ class Movement():
         self.score = 0
         self.current_score = 0
         self.score_counter = 1
+        self.feedback_counter = 1
+        self.feedback_rating = ""
         self.last_seen = {x: None for x in range(17)}
         self.history = [{x: None for x in range(17)}]
         if mov_json != None:
@@ -180,6 +182,7 @@ class Movement():
             current_center = StickFigureEstimator.get_center(current_points)
             current_width = StickFigureEstimator.get_width(current_points)
             
+            # display avatar and calculate score
             if captured_width and current_center and current_width:
                 score_1, score_2 = None, None
                 if current_center and current_width and captured_width:
@@ -194,27 +197,41 @@ class Movement():
                     self.current_score = (score_1 + score_2) / 2
                     self.score += (score_1 + score_2) / 2
                     self.score_counter += 1
+                    self.feedback_counter += 1 
                 elif score_1:
                     self.current_score = score_1
                     self.score += score_1
-                    self.score_counter += 1
+                    self.feedback_counter += 1 
                 elif score_2:
                     self.current_score = score_2
                     self.score += score_2
-                    self.score_counter += 1
+                    self.feedback_counter += 1 
                 
                 frame = StickFigureEstimator.overlay_avatar(frame, captured_points, int(current_width * frame.shape[1] / 8 ))
-                #for (pointa, pointb) in Movement.__get_stick_figure_lines(captured_points).values():
-                #    if pointa and pointb:
-                        # Convert from relative to absolute
-                #        pointa = (int(pointa[0] * frame.shape[1]), int(pointa[1] * frame.shape[0]))
-                #        pointb = (int(pointb[0] * frame.shape[1]),  int(pointb[1] * frame.shape[0]))
-                        # Display
-                #        cv2.line(frame, pointa, pointb, color=Movement.RED, thickness=Movement.STICK_FIGURE_THICKNESS) 
+            score = self.get_score() 
+            
+            if self.feedback_counter > self.FEEDBACK_RESET:
+                self.feedback_counter = 0
+                if score > 90:
+                    self.feedback_rating = "PERFECT!"
+                elif score > 80:
+                    self.feedback_rating = "GREAT!"
+                elif score > 70:
+                    self.feedback_rating = "GOOD"
+                elif score > 60:
+                    self.feedback_rating = "OK"
+                else:
+                    self.feedback_rating = "TRY AGAIN"
+                    
+                    
+            # Draw score on frame
+            cv2.putText(frame, text=str(self.get_score()), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
+                    fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
+            # Draw feedback on frame
+            cv2.putText(frame, text=self.feedback_rating, org=(75, 200), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
+                    fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA)
+
         
-        # Draw score on frame
-        cv2.putText(frame, text=self.get_score(), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
-                fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
         # -----------------
         # SEND JUMP MESSAGE
         # -----------------
@@ -234,7 +251,7 @@ class Movement():
 
     
     def get_score(self):
-        return str(int(self.score/self.score_counter * 100)/100.0)
+        return int(self.score/self.score_counter * 100)/100.0
     
     
     def get_current_score(self):
