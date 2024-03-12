@@ -3,6 +3,7 @@ import numpy as np
 import json
 from model_utils import *
 from point import *
+import random
     
 
 class Movement():
@@ -13,7 +14,7 @@ class Movement():
     RED = (255, 0, 0)
 
     STICK_FIGURE_THICKNESS = 5
-    FEEDBACK_RESET = 20
+    FEEDBACK_RESET = 90
 
     def __init__(self, mov_json = None):
         self.test_path_ptr = 0
@@ -25,6 +26,7 @@ class Movement():
         self.score_counter = 1
         self.feedback_counter = 1
         self.feedback_rating = ""
+        self.feedback_color = (0, 0, 255)
         self.last_seen = {x: None for x in range(17)}
         self.history = [{x: None for x in range(17)}]
         if mov_json != None:
@@ -217,27 +219,32 @@ class Movement():
             feedback_score = self.feedback_score / self.feedback_counter
             
             if self.feedback_counter > self.FEEDBACK_RESET:
-                self.feedback_counter = 0
+                self.feedback_counter = 1
                 self.feedback_score = 0
                 if feedback_score > 90:
                     self.feedback_rating = "PERFECT!"
+                    self.feedback_color = (255, 0, 255) # Purple
                 elif feedback_score > 80:
                     self.feedback_rating = "GREAT!"
+                    self.feedback_color = (0, 255, 0) # Green
                 elif feedback_score > 70:
-                    self.feedback_rating = "GOOD"
+                    self.feedback_rating = "ALRIGHT!" 
+                    self.feedback_color = (255, 255, 0) # Yellow
                 elif feedback_score > 60:
                     self.feedback_rating = "OK"
+                    self.feedback_color = (255, 165, 0) # Orange
                 else:
                     self.feedback_rating = "TRY HARDER"
+                    self.feedback_color = (0, 0, 255)
                     
                     
             # Draw score on frame
             cv2.putText(frame, text=str(self.get_score()), org=(75, 100), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
                     fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA) 
             # Draw feedback on frame
-            if self.feedback_counter < Movement.FEEDBACK_RESET / 2:
-                cv2.putText(frame, text=self.feedback_rating, org=(75, 200), fontFace=cv2.FONT_HERSHEY_DUPLEX,  
-                        fontScale=2, color=(0, 0, 255) , thickness=4, lineType=cv2.LINE_AA)
+            if self.feedback_counter < Movement.FEEDBACK_RESET / 3:
+                cv2.putText(frame, text=self.feedback_rating, org=(frame.shape[1]-375, 100), fontFace=cv2.FONT_HERSHEY_SIMPLEX,  
+                        fontScale=2, color=self.feedback_color, thickness=4, lineType=cv2.LINE_AA)
 
         
         # -----------------

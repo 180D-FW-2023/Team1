@@ -171,9 +171,9 @@ class StickFigureEstimator():
 
         alpha = 0.5
         overlay = np.zeros_like(image, dtype=np.uint8)
-        arm_color = (0, 0, 255)
+        arm_color = (255, 0, 0)
         torso_color = (0, 255, 0)
-        head_color = (255, 0, 0)
+        head_color = (0, 0, 255)
         outline_color = (255, 255, 255)
         # left arm
         if points[POINT_LEFT_SHOULDER] and points[POINT_LEFT_ELBOW]:
