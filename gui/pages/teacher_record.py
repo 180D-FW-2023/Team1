@@ -2,10 +2,13 @@ import streamlit as st
 from streamlit_extras.switch_page_button import switch_page
 import cv2
 import time
+from streamlit_lottie import st_lottie
 import movement
 import json
 import threading
 from model_utils import *
+
+st.set_page_config(layout='wide')
 
 # Change session state based on page
 st.session_state['current_page'] = 'teacher_record'
@@ -75,10 +78,8 @@ def render_teacher_record():
     st.header(" ")
     st.markdown("Make sure your whole body is visible in the frame.")
     cap = cv2.VideoCapture(0)
-    col1, col2 = st.columns([20,3])
+    col1, col2 = st.columns([10,50])
     with col1:
-        frame_holder = st.empty()
-    with col2:
         st.subheader("Student Scores:" )
         student_scores = st.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
     fps_counter = st.empty()
