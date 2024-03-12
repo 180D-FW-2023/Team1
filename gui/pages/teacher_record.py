@@ -138,8 +138,6 @@ def render_teacher_record():
             # Spin loop to get 1/FPS FPS
             while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):
                 pass
-            # Update FPS Counter
-            fps_counter.markdown(f"FPS: {str(int(100_000_000_000.0 / (time.monotonic_ns() - loop_start))/100.0)}")
             student_scores.markdown("\n".join([f"{student}: {'N/A' if score is None else score}" for student, score in st.session_state['students'].items()]))
             if exit_button:
                 cap.release()
