@@ -215,7 +215,7 @@ class Movement():
                     self.score_counter += 1
                     self.feedback_counter += 1 
                 
-                frame = StickFigureEstimator.overlay_avatar(frame, captured_points, int(current_width * frame.shape[1] / 8 ))
+                frame = StickFigureEstimator.overlay_avatar(frame, captured_points)
             feedback_score = self.feedback_score / self.feedback_counter
             
             if self.feedback_counter > self.FEEDBACK_RESET:

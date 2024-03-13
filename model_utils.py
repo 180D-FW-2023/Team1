@@ -162,12 +162,18 @@ class StickFigureEstimator():
         return np.array([p1, p2, p3, p4])
 
 
-    def overlay_avatar(image, points, thickness=50):
+    def overlay_avatar(image, points):
         points = dict(points)
         for i in range(17):
             if points[i] is not None:
                 points[i] = (int(points[i][0] * image.shape[1]),
                              int(points[i][1] * image.shape[0]))
+
+        current_width = StickFigureEstimator.get_width(points)
+        if current_width:
+            thickness = current_width / 8
+        else:
+            thickness = 20
 
         alpha = 0.5
         overlay = np.zeros_like(image, dtype=np.uint8)
