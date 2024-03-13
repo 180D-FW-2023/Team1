@@ -72,6 +72,9 @@ def send_on_click():
 
 def exit_on_click():
     st.session_state['mqtt'].publish(f'mirrorme/teacher_{st.session_state["room_code"]}', json.dumps({"command": "exit"}), qos=1)
+    if st.session_state.get("mirrormodule_name", None) is not None:
+        st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
+                    json.dumps({"command": "score", "score": 100}), qos=1)
     st.session_state['mqtt'].disconnect()
 
 def render_teacher_record():
@@ -144,7 +147,7 @@ def render_teacher_record():
                 curr_score = st.session_state['movement'].get_current_score()
                 if st.session_state.get("mirrormodule_name", None) is not None:
                     st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
-                                    json.dumps({"command": "score", "score": curr_score}), qos=1)
+                                json.dumps({"command": "score", "score": curr_score}), qos=1)
             frame_holder.image(frame, use_column_width=True)
             # Spin loop to get 1/FPS FPS
             while time.monotonic_ns() < loop_start + (1/FPS*1_000_000_000):

@@ -114,7 +114,7 @@ def render_student_perform():
                     curr_score = st.session_state['movement'].get_current_score()
                     if st.session_state.get("mirrormodule_name", None) is not None:
                         st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
-                                        json.dumps({"command": "score", "score": curr_score}), qos=1)
+                                    json.dumps({"command": "score", "score": curr_score}), qos=1)
                     st.session_state['score'] = score
                 else:
                     score = st.session_state['movement'].get_score()
@@ -130,6 +130,9 @@ def render_student_perform():
             # Handle Buttons
             if exit_button or not st.session_state.get('valid_room', False):
                 cap.release()
+                if st.session_state.get("mirrormodule_name", None) is not None:
+                    st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
+                        json.dumps({"command": "score", "score": 100}), qos=1)
                 # If room was closed
                 if not st.session_state.get('valid_room', False):
                     st.session_state['message'] = 'Teacher Closed Room.'
