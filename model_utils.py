@@ -171,7 +171,7 @@ class StickFigureEstimator():
 
         current_width = StickFigureEstimator.get_width(points)
         if current_width:
-            thickness = current_width / 8
+            thickness = int(current_width / 8)
         else:
             thickness = 20
 
