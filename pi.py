@@ -55,7 +55,7 @@ def double_tap_callback(channel):
 
 GPIO.setup(INTERRUPT_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 GPIO.add_event_detect(INTERRUPT_PIN, GPIO.RISING, callback=double_tap_callback, bouncetime=300)
-pin_frequency = 0
+pin_frequency = 2
 
 
 def set_pin_frequency(freq):
@@ -63,7 +63,7 @@ def set_pin_frequency(freq):
 
 def classify_jump(acc_arr):
     mag = math.sqrt(sum([x**2 for x in acc_arr]))
-    if mag < 0.3:
+    if mag < 0.8:
         return True
     return False
 
@@ -78,7 +78,7 @@ def mirrormodule_on_recv(client, userdata, message):
         is_mqtt = True
         client.publish(f'mirrorme/mirrormodule_{socket.gethostname()}', json.dumps({"command": "valid"}), qos=1)
     elif msg['command'] == 'score':
-        pin_frequency = msg['score']
+        pin_frequency = max(100 - msg['score'], 2)
         print(pin_frequency)
 
 def main(mqtt_client):
@@ -122,7 +122,7 @@ def main(mqtt_client):
     writeByte(LSM6DSL_ADDRESS,LSM6DSL_MD1_CFG,0b00001000)                  #Double-tap interrupt driven to INT1 pin
 
     while True:
-        if pin_frequency != 0:
+        if pin_frequency != 2:
             time.sleep(1/pin_frequency)
             GPIO.output(pin, GPIO.LOW)
             time.sleep(1/pin_frequency)
@@ -140,7 +140,7 @@ def main(mqtt_client):
                     if data >= 0 and data <= 100:
                         pin_frequency = data
             except:
-                pin_frequency = 0
+                pin_frequency = 1
         if len(buf) > 0:
             if classify_jump(buf[-1]) is True:
                 if(is_bluetooth):
