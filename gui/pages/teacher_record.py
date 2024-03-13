@@ -125,13 +125,13 @@ def render_teacher_record():
             # Idle mode
             if st.session_state['mode'] == "idle":
                 title.title("Record your Movement for your Students!")
-                frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
+                frame = StickFigureEstimator.overlay_avatar(frame, new_points)
                 if st.session_state.get("mirrormodule_name", None) is not None:
                     st.session_state['mirrormodule_mqtt'].publish(f'mirrorme/mirrormodule_{st.session_state["mirrormodule_name"]}', \
                                     json.dumps({"command": "score", "score": 100}), qos=1)
             elif st.session_state['mode'] == "record":
                 title.title("Recording... Press Stop to Finish.")
-                frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
+                frame = StickFigureEstimator.overlay_avatar(frame, new_points)
                 # Flashing recording circle to indicate recording every half second
                 if (loop_start // 500_000_000) % 2 == 0:
                     frame = cv2.circle(frame, (frame.shape[1] - 50, 50), 20, (255, 0, 0), -1)

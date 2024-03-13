@@ -63,8 +63,8 @@ def render_student_perform():
     st.session_state['mqtt'].on_message = mirrorme_on_recv
     if st.session_state.get("mirrormodule_name", None) is not None:
         st.session_state['mirrormodule_mqtt'].on_message = mirrormodule_on_recv
-    col1, col2, col3 = st.columns([5, 20,3])
     message = st.empty()
+    col1, col2, col3 = st.columns([5, 20,3])
     with col2:
         st.markdown("Make sure your whole body is visible in the frame.")
         frame_holder = st.empty()
@@ -94,7 +94,7 @@ def render_student_perform():
             # Waiting for a movement mode
             if st.session_state['mode'] == "waiting":
                 message.header("Waiting for Teacher to Send Movement.")
-                frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
+                frame = StickFigureEstimator.overlay_avatar(frame, new_points)
             
             # Waiting to start performing mode
             elif st.session_state['mode'] == "idle":
@@ -103,7 +103,7 @@ def render_student_perform():
                     message.header("Got a new movement from Teacher. Press Start to perform.")
                 else:
                     message.header(f"You got a score of {st.session_state['score']}!. Press Start to try again!")
-                frame = movement.Movement.draw_stick_figure_simple(frame, new_points)
+                frame = StickFigureEstimator.overlay_avatar(frame, new_points)
         
             # Performing movement mode
             elif st.session_state['mode'] == "performing":
