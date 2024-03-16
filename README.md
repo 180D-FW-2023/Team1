@@ -8,11 +8,16 @@ All required python packages are below in requirements.txt
 ```
     .streamlit/ --> Contains the theme for the application.
     archive/ --> Contains no longer required, but relevant files.
+    BerryIMU/ --> Contains relevant code for supporting the BerryIMU
     gui/ --> Contains all the pages of the application.
     node_modules/ --> Contains styling for the application.
-    pi_files/ --> Contains the files that will run on the MirrorModule Rapsberry Pi.
+    pi_files/ --> Contains the libraries and packages that will run on the MirrorModule Rapsberry Pi.
+    testing_and_data/ --> Includes the programs for and the data of testing networking latency
     model_utils.py --> Utils file for Stick Pose Estimation ML model.
     movement.py --> Library for storing and displaying movement data
-    point.py --> Enum file.
+    package-lock.json --> Json file related to styling the application front-end
+    package.json --> Json file related to styling the application front-end
+    pi.py --> Application that runs on the MirrorModule
+    point.py --> Enum file used by the application
     requirements.txt --> List of required python packages.
 ```
