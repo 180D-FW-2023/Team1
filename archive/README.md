@@ -1,0 +1,2 @@
+This file is for all code that we used in the development of our project, but eventually refactored / discarded.
+It includes files for capturing and drawing the user's movement, our initial GUI for the Fall 2023 demo, and bluetooth sample code.
